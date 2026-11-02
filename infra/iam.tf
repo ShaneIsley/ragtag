@@ -239,7 +239,7 @@ data "aws_iam_policy_document" "github_ci_trust" {
       variable = "token.actions.githubusercontent.com:sub"
       # main only, where the evaluation gate runs. Pull requests and other
       # branches can't assume this role, so they can't read the model keys.
-      values = ["repo:${var.github_repository}:ref:refs/heads/main"]
+      values = ["repo:${local.github_oidc_repository}:ref:refs/heads/main"]
     }
   }
 }
@@ -262,7 +262,7 @@ data "aws_iam_policy_document" "github_deploy_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/main"]
+      values   = ["repo:${local.github_oidc_repository}:ref:refs/heads/main"]
     }
   }
 }

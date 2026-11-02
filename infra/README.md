@@ -100,7 +100,7 @@ GitHub Actions runs the pipeline in [`.github/workflows/ci.yml`](../.github/work
 AWS access is by OIDC, so no AWS keys are stored in GitHub, and the sign-in step masks the account number in the logs. The CI role (`github_ci_role_arn`) can be assumed only from main, reads only the two keys the app needs to answer, and may write only release records. The deploy role (`github_deploy_role_arn`), main only, may push the three images, update the three functions, and start the eval function.
 
 **Setting it up, once:**
-1. In `terraform.tfvars`, set `github_repository = "ShaneIsley/ragtag"`, then plan and apply: this sets the roles' trust.
+1. In `terraform.tfvars`, set `github_repository = "ShaneIsley/ragtag"` and `github_oidc_repository = "ShaneIsley@7237/ragtag@1441741671"`, then plan and apply: this sets the roles' trust. GitHub's tokens now name a repository with its owner's and its own permanent IDs (`owner@owner_id/name@repository_id`), so a renamed or re-created repository can't take over the trust; the first sign-ins were refused until the trust used that form (2 Nov 2026). The IDs are the `id` fields at `api.github.com/users/ShaneIsley` and `api.github.com/repos/ShaneIsley/ragtag`; a refused sign-in's `userName` in CloudTrail shows the whole subject.
 2. Give the repository four Actions secrets, at `github.com/ShaneIsley/ragtag/settings/secrets/actions`, "New repository secret", each the output shown. None is a key, but secrets are masked in the logs, which are public on a public repository; variables would print the account, the services' names and the site's address:
 
    | Secret | Value |

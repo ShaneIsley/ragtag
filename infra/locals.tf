@@ -25,6 +25,9 @@ locals {
     risk_rating         = "Low"
   }
 
+  # How GitHub's OIDC tokens name the repository (variables.tf).
+  github_oidc_repository = coalesce(var.github_oidc_repository, var.github_repository)
+
   bedrock_profile_arn = "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/${var.bedrock_inference_profile_id}"
   bedrock_model_arns  = [for r in var.bedrock_destination_regions : "arn:aws:bedrock:${r}::foundation-model/${var.bedrock_foundation_model_id}"]
 }

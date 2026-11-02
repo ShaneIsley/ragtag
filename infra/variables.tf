@@ -36,12 +36,28 @@ variable "alert_email" {
 }
 
 variable "github_repository" {
-  description = "GitHub repository allowed to assume the CI and deploy roles, as owner/name."
+  description = "The GitHub repository that runs CI/CD, as owner/name. Tags every resource."
   type        = string
 
   validation {
     condition     = can(regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", var.github_repository))
     error_message = "Use the form owner/name, for example ShaneIsley/policy-desk."
+  }
+}
+
+variable "github_oidc_repository" {
+  description = <<-EOT
+    The same repository as GitHub's OIDC tokens name it, which the CI and deploy roles
+    trust: owner@owner_id/name@repository_id for newer repositories (2026), so a renamed
+    or re-created repository can't take over the trust. A refused sign-in's userName in
+    CloudTrail shows it. Empty means owner/name, the older form.
+  EOT
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.github_oidc_repository == "" || can(regex("^[A-Za-z0-9_.-]+(@[0-9]+)?/[A-Za-z0-9_.-]+(@[0-9]+)?$", var.github_oidc_repository))
+    error_message = "Use owner@owner_id/name@repository_id, for example ShaneIsley@7237/ragtag@1441741671."
   }
 }
 

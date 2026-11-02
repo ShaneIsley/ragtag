@@ -2,6 +2,9 @@
 
 alert_email       = "you@example.com"
 github_repository = "your-github-user/ragtag" # the GitHub mirror that runs CI
+# As GitHub's OIDC tokens name it: owner@owner_id/name@repository_id. Find the IDs at
+# api.github.com/users/<owner> and api.github.com/repos/<owner>/<name> ("id").
+# github_oidc_repository = "your-github-user@1234/ragtag@567890"
 
 # The Azure IDs come from the signed-in CLIs, so they aren't set here:
 # - subscription: export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
