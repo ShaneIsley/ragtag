@@ -1,10 +1,10 @@
 # Policy Desk
 
+A quick, technical and process demonstration of a RAG enabled Chatbot for UNSW role Technology Specialist Lead(AI).
+
 "Policy Desk" answers questions about how AI may be used at UNSW, from the university's published policies and guidance. Every answer cites the passages it came from. When the sources don't cover a question, it says so instead of guessing. Each answer can be traced step by step, and the system is checked against a fixed set of test questions before every release.
 
 It is a deliberately small example of retrieval-augmented generation (RAG) built the way an organisation would run it in production: evaluated, observable, privacy-aware and documented.
-
-**Status, 2 November 2026:** in progress. The service runs on AWS and answers questions with citations. GitHub Actions checks every change, runs an evaluation gate before any change to the answers ships, and deploys; production is evaluated again every night and every week. The site shuts down at the end of November 2026.
 
 | Part | State |
 |---|---|
@@ -23,11 +23,10 @@ It is a deliberately small example of retrieval-augmented generation (RAG) built
 | CI/CD on GitHub Actions: checks on every push and pull request; on main, the evaluation gate when answers could change, then an automatic deploy over OIDC | Built, in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | Runbook: what to do for each alarm, and the routine procedures | Done, in [`docs/runbook.md`](docs/runbook.md) |
 | Governance documents: a system card, the AI Assurance Framework self-assessment, a data-flow diagram and a user guide | Done, in [`docs/`](docs/) |
-| Feedback and admin view | Planned (Phase 3) |
 
 ## How it works
 
-The full design, with diagrams of each part and how it relates to UNSW's services and rules, is in [`docs/design.md`](docs/design.md). Dashed steps below are planned. The diagrams are drawn in D2 ([`docs/diagrams/`](docs/diagrams/)).
+The full design, with diagrams of each part and how it relates to known UNSW's services and rules, is in [`docs/design.md`](docs/design.md). Dashed steps below are planned. The diagrams are drawn in D2 ([`docs/diagrams/`](docs/diagrams/)).
 
 ![How it works: the ingest, answer and evaluation flows](docs/diagrams/overview.svg)
 
