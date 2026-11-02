@@ -97,21 +97,20 @@ GitHub Actions runs the pipeline in [`.github/workflows/ci.yml`](../.github/work
 | A push to main that changes a file deciding answers (the release fingerprint's files) | The evaluation gate: the app's image runs on the runner against the real Azure services, with the CI role's credentials for its keys, and the 40 golden questions are asked. The run is recorded as a release run (`runs/release/` in the records bucket). About US$0.15 |
 | A push to main that changes anything deployed, once the checks and the gate (if it ran) pass | Deploy: build the three images, scan them, push them to ECR, then `scripts/deploy.sh`, as `make release` does: the functions, `/health`, and a post-deploy canary (`runs/post-deploy/`) |
 
-AWS access is by OIDC, so no AWS keys are stored in GitHub. The CI role (`github_ci_role_arn`) can be assumed only from main, reads only the two keys the app needs to answer, and may write only release records. The deploy role (`github_deploy_role_arn`), main only, may push the three images, update the three functions, and start the eval function.
+AWS access is by OIDC, so no AWS keys are stored in GitHub, and the sign-in step masks the account number in the logs. The CI role (`github_ci_role_arn`) can be assumed only from main, reads only the two keys the app needs to answer, and may write only release records. The deploy role (`github_deploy_role_arn`), main only, may push the three images, update the three functions, and start the eval function.
 
 **Setting it up, once:**
 1. In `terraform.tfvars`, set `github_repository = "ShaneIsley/ragtag"`, then plan and apply: this sets the roles' trust.
-2. Give the repository four variables, at `github.com/ShaneIsley/ragtag/settings/variables/actions`, "New repository variable", each the output shown:
+2. Give the repository four Actions secrets, at `github.com/ShaneIsley/ragtag/settings/secrets/actions`, "New repository secret", each the output shown. None is a key, but secrets are masked in the logs, which are public on a public repository; variables would print the account, the services' names and the site's address:
 
-   | Variable | Value |
+   | Secret | Value |
    |---|---|
    | `AWS_CI_ROLE_ARN` | `terraform -chdir=infra output -raw github_ci_role_arn` |
    | `AWS_DEPLOY_ROLE_ARN` | `terraform -chdir=infra output -raw github_deploy_role_arn` |
    | `APP_ENV` | `terraform -chdir=infra output -raw ci_env`, all its lines |
    | `SITE_URL` | `terraform -chdir=infra output -raw app_url` |
 
-   `APP_ENV` holds the gate's settings: endpoints, names and secret ARNs, no secrets. (With the GitHub CLI, `gh variable set <name> --repo ShaneIsley/ragtag --body "<value>"` does the same.)
-3. The `production` environment is created on the first deploy; protection rules, such as a required reviewer, can be added there.
+   `APP_ENV` holds the gate's settings: endpoints, names and secret ARNs, no secrets. (With the GitHub CLI, `gh secret set <name> --repo ShaneIsley/ragtag --body "<value>"` does the same.)
 
 **Publishing:** the forge repository is the source. `scripts/publish-github.sh` copies, over SSH with your GitHub key, a commit's files for running, deploying, using and understanding the service to GitHub, without the forge's history (no prototype, working notes or the script itself), as one "Snapshot of <commit>" commit, which starts the pipeline. Run it with `PUBLISH_PUSH=1` to push.
 

@@ -5,8 +5,10 @@
 #      and the run is recorded as a release run (about US$0.15)
 #   2. deploy, if the gate passed or wasn't needed: build, scan and push the images,
 #      point the functions at them, check /health, and start a post-deploy canary
-# AWS access is by OIDC: no keys are stored in GitHub. The GitHub variables are listed
-# in infra/README.md, CI and deployment.
+# AWS access is by OIDC: no keys are stored in GitHub. The four settings it needs are
+# Actions secrets, not variables, so they're masked in the logs, which are public on a
+# public repository: none is a key, but they name the account, the services and the
+# site (infra/README.md, CI and deployment).
 name: CI/CD
 
 on:
@@ -34,8 +36,8 @@ jobs:
       answer: ${{ steps.filter.outputs.answer }}
       deploy: ${{ steps.filter.outputs.deploy }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           # The files evals/records.py fingerprints: a change here needs the gate.
@@ -60,8 +62,8 @@ jobs:
   checks:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
         with:
           version: ${{ env.UV_VERSION }}
           python-version: "3.12"
@@ -77,8 +79,8 @@ jobs:
   infra:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
       - run: terraform -chdir=infra fmt -check -recursive
       - run: terraform -chdir=infra init -backend=false -input=false
       - run: terraform -chdir=infra validate
@@ -90,7 +92,7 @@ jobs:
       matrix:
         image: [app, ingest, eval]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build
         run: docker build -f Dockerfile.${{ matrix.image }} -t policy-desk-${{ matrix.image }}:pr .
       - name: Scan, reporting high and critical
@@ -118,15 +120,22 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_CI_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
       - name: Build the app's image
         run: docker build -f Dockerfile.app --build-arg APP_VERSION="${GITHUB_SHA::12}" -t policy-desk-app:candidate .
       - name: Run it, with the CI role's credentials for its keys
         run: |
+          # Mask each long value too (ARNs, endpoints, the bucket), not only the whole
+          # multi-line secret.
+          while IFS= read -r line; do
+            value=${line#*=}
+            if [ ${#value} -ge 20 ]; then echo "::add-mask::$value"; fi
+          done <<< "$APP_ENV"
           printf '%s\n' "$APP_ENV" > "$RUNNER_TEMP/app.env"
           docker run -d --name app -p 127.0.0.1:8001:8000 --env-file "$RUNNER_TEMP/app.env" \
             -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN -e AWS_REGION \
@@ -134,13 +143,13 @@ jobs:
           for _ in $(seq 1 60); do curl -sf http://127.0.0.1:8001/health && exit 0; sleep 2; done
           docker logs app; exit 1
         env:
-          APP_ENV: ${{ vars.APP_ENV }}
-      - uses: astral-sh/setup-uv@v6
+          APP_ENV: ${{ secrets.APP_ENV }}
+      - uses: astral-sh/setup-uv@v10
         with:
           version: ${{ env.UV_VERSION }}
           python-version: "3.12"
           enable-cache: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       - run: uv sync --frozen --all-groups
@@ -150,14 +159,14 @@ jobs:
           make eval EVAL_KIND=release
       - name: Keep the results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evaluation
           path: evals/results/
           if-no-files-found: ignore
       - name: The app's log, if the gate failed
         if: failure()
-        run: docker logs app
+        run: docker logs app || echo "The app didn't start."
 
   deploy:
     needs: [changes, checks, infra, gate]
@@ -167,7 +176,8 @@ jobs:
       (needs.gate.result == 'success' || needs.gate.result == 'skipped') &&
       (needs.changes.outputs.deploy == 'true' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04-arm
-    environment: production
+    # No GitHub environment here: a job in one presents itself to AWS as that
+    # environment, not as main, and the deploy role trusts main only.
     concurrency:
       group: deploy
       cancel-in-progress: false
@@ -175,11 +185,12 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
       - uses: aws-actions/amazon-ecr-login@v2
         id: ecr
       - name: The release's tag, the commit's short SHA
@@ -232,4 +243,4 @@ jobs:
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           TAG: ${{ steps.tag.outputs.tag }}
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ secrets.SITE_URL }}
