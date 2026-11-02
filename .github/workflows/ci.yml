@@ -40,9 +40,11 @@ jobs:
       - uses: dorny/paths-filter@v4
         id: filter
         with:
-          # The files evals/records.py fingerprints: a change here needs the gate.
+          # The files evals/records.py fingerprints: a change here needs the gate. A change
+          # to this workflow runs the gate and deploy too, so the pipeline is proven end to end.
           filters: |
             answer:
+              - '.github/workflows/**'
               - 'app/**'
               - 'prompts/**'
               - 'search/index.json'
@@ -50,6 +52,7 @@ jobs:
               - 'pyproject.toml'
               - 'uv.lock'
             deploy:
+              - '.github/workflows/**'
               - 'app/**'
               - 'prompts/**'
               - 'search/**'
@@ -137,10 +140,16 @@ jobs:
             if [ ${#value} -ge 20 ]; then echo "::add-mask::$value"; fi
           done <<< "$APP_ENV"
           printf '%s\n' "$APP_ENV" > "$RUNNER_TEMP/app.env"
+          # boto3 takes its region from AWS_DEFAULT_REGION; Lambda sets it, here it's passed.
           docker run -d --name app -p 127.0.0.1:8001:8000 --env-file "$RUNNER_TEMP/app.env" \
-            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN -e AWS_REGION \
-            policy-desk-app:candidate
-          for _ in $(seq 1 60); do curl -sf http://127.0.0.1:8001/health && exit 0; sleep 2; done
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+            -e AWS_REGION -e AWS_DEFAULT_REGION policy-desk-app:candidate
+          for _ in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8001/health && exit 0
+            # Stop waiting as soon as the app has exited.
+            [ "$(docker inspect -f '{{.State.Running}}' app)" = true ] || break
+            sleep 2
+          done
           docker logs app; exit 1
         env:
           APP_ENV: ${{ secrets.APP_ENV }}
