@@ -1,6 +1,6 @@
 # Policy Desk
 
-Policy Desk answers questions from UNSW staff and students about how AI may be used at UNSW, from the university's published policies and guidance. Every answer cites the passages it came from. When the sources don't cover a question, it says so instead of guessing. Each answer can be traced step by step, and the system is checked against a fixed set of test questions before every release.
+"Policy Desk" answers questions about how AI may be used at UNSW, from the university's published policies and guidance. Every answer cites the passages it came from. When the sources don't cover a question, it says so instead of guessing. Each answer can be traced step by step, and the system is checked against a fixed set of test questions before every release.
 
 It is a deliberately small example of retrieval-augmented generation (RAG) built the way an organisation would run it in production: evaluated, observable, privacy-aware and documented.
 
