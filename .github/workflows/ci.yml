@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           version: ${{ env.UV_VERSION }}
           python-version: "3.12"
@@ -96,14 +96,14 @@ jobs:
       - name: Build
         run: docker build -f Dockerfile.${{ matrix.image }} -t policy-desk-${{ matrix.image }}:pr .
       - name: Scan, reporting high and critical
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: policy-desk-${{ matrix.image }}:pr
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "0"
       - name: Scan, failing on critical
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: policy-desk-${{ matrix.image }}:pr
           severity: CRITICAL
@@ -144,7 +144,7 @@ jobs:
           docker logs app; exit 1
         env:
           APP_ENV: ${{ secrets.APP_ENV }}
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           version: ${{ env.UV_VERSION }}
           python-version: "3.12"
@@ -206,21 +206,21 @@ jobs:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           TAG: ${{ steps.tag.outputs.tag }}
       - name: Scan the app's image, failing on critical
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.ecr.outputs.registry }}/policy-desk-app:${{ steps.tag.outputs.tag }}
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: "1"
       - name: Scan the ingest image, failing on critical
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.ecr.outputs.registry }}/policy-desk-ingest:${{ steps.tag.outputs.tag }}
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: "1"
       - name: Scan the eval image, failing on critical
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.ecr.outputs.registry }}/policy-desk-eval:${{ steps.tag.outputs.tag }}
           severity: CRITICAL
