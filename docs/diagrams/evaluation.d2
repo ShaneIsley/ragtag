@@ -1,0 +1,58 @@
+# Section 4.11: the scheduled evaluation, and where every run is recorded.
+...@_shared
+direction: right
+
+sched: "EventBridge Scheduler\nSydney time" {
+  class: aws
+  icon: ${i-eventbridge}
+  calibration: "calibration\nnightly, 2:15 am\n25 fixed answers"
+  canary: "canary\nnightly, 2:30 am\n13 cases"
+  full: "full\nMondays, 4 am\n40 cases"
+  standby: "standby\nMondays, 4:30 am\n5 cases, on Bedrock"
+}
+
+fn: "Lambda: eval" {
+  class: aws
+  lock: "Take the lock\nif no run holds it"
+  pf: "promptfoo\nasks each case"
+  checks: "Checks\n7 from the response,\n3 by judge models"
+  gate: "Gate\nthresholds.yaml,\nknown issues" {class: question}
+  cal: "Calibration\nthe judges score\nfixed answers"
+  lock -> pf -> checks -> gate
+  lock -> cal
+}
+
+prod: "CloudFront and the app\nproduction" {icon: ${i-cloudfront}; class: aws}
+chat: "Azure OpenAI chat\nthe judges" {icon: ${i-openai}; class: azure}
+
+bucket: "S3: evaluation records" {
+  class: aws
+  icon: ${i-s3}
+  rec: "runs/monitor/ and\nruns/calibration/\na summary, kept;\nstatus/snapshot.json"
+  res: "results/\nevery answer, 90 days"
+}
+
+alarm: "eval_failed alarm\nemail" {icon: ${i-sns}; class: decline}
+
+op: "Operator: make eval" {
+  class: outside
+  icon: ${i-laptop}
+  kinds: "release, post-deploy,\nexperiment, drill and\ncalibration runs\nmake eval, make calibrate"
+}
+localrec: "evals/results/records/\nthe same record format" {icon: ${i-file}}
+trend: "Quality trend\nmonitor and post-deploy runs only\nthe status page, Phase 3" {class: planned}
+
+sched.calibration -> fn.lock
+sched.canary -> fn.lock
+sched.full -> fn.lock
+sched.standby -> fn.lock
+fn.pf -> prod: golden questions
+fn.checks -> chat
+fn.cal -> chat
+fn.cal -> bucket.rec: agreement
+fn.gate -> bucket.rec: every run
+fn.gate -> bucket.res
+fn.gate -> alarm: "failed, or didn't finish"
+op.kinds -> localrec
+bucket.rec -> trend {class: planned}
+localrec -> trend {class: planned}

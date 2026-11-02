@@ -1,0 +1,9 @@
+{# Applies a saved Light or Dark choice before the page draws, so it doesn't flash. #}
+<script nonce="{{ nonce }}">
+(() => {
+  try {
+    const theme = localStorage.getItem("theme");
+    if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+  } catch (e) { /* storage blocked: follow the device */ }
+})();
+</script>

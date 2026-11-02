@@ -1,0 +1,79 @@
+# Shared by every diagram: render settings, icons and styles. Not a diagram itself.
+# Render with `make diagrams` (D2 0.7.1; docs/diagrams/README.md).
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 0
+    dark-theme-id: 200
+    pad: 24
+  }
+  # icons.terrastruct.com, embedded in each SVG when it's rendered
+  i-lambda: "https://icons.terrastruct.com/aws%2FCompute%2FAWS-Lambda.svg"
+  i-cloudfront: "https://icons.terrastruct.com/aws%2FNetworking%20&%20Content%20Delivery%2FAmazon-CloudFront.svg"
+  i-s3: "https://icons.terrastruct.com/aws%2FStorage%2FAmazon-Simple-Storage-Service-S3.svg"
+  i-dynamodb: "https://icons.terrastruct.com/aws%2FDatabase%2FAmazon-DynamoDB.svg"
+  i-secrets: "https://icons.terrastruct.com/aws%2FSecurity%2C%20Identity%2C%20&%20Compliance%2FAWS-Secrets-Manager.svg"
+  i-ecr: "https://icons.terrastruct.com/aws%2FCompute%2FAmazon-EC2-Container-Registry.svg"
+  i-cloudwatch: "https://icons.terrastruct.com/aws%2FManagement%20&%20Governance%2FAmazon-CloudWatch.svg"
+  i-xray: "https://icons.terrastruct.com/aws%2FDeveloper%20Tools%2FAWS-X-Ray.svg"
+  i-sns: "https://icons.terrastruct.com/aws%2FApplication%20Integration%2FAmazon-Simple-Notification-Service-SNS.svg"
+  i-eventbridge: "https://icons.terrastruct.com/aws%2FApplication%20Integration%2FAmazon-EventBridge.svg"
+  i-bedrock: "https://icons.terrastruct.com/aws%2FMachine%20Learning%2FMachine-Learning.svg"
+  i-iam: "https://icons.terrastruct.com/aws%2FSecurity%2C%20Identity%2C%20&%20Compliance%2FAWS-Identify-and-Access-Management_IAM.svg"
+  i-budgets: "https://icons.terrastruct.com/aws%2FAWS%20Cost%20Management%2FAWS-Budgets.svg"
+  i-openai: "https://icons.terrastruct.com/azure%2FAI%20and%20ML%20Service%20Color%2FCognitive%20Services.svg"
+  i-search: "https://icons.terrastruct.com/azure%2FWeb%20Service%20Color%2FAzure%20Search.svg"
+  i-entra: "https://icons.terrastruct.com/azure%2FIdentity%20Service%20Color%2FActive%20Directory.svg"
+  i-users: "https://icons.terrastruct.com/essentials%2F359-users.svg"
+  i-user: "https://icons.terrastruct.com/essentials%2F365-user.svg"
+  i-web: "https://icons.terrastruct.com/essentials%2F214-worldwide.svg"
+  i-browser: "https://icons.terrastruct.com/tech%2Fbrowser-2.svg"
+  i-laptop: "https://icons.terrastruct.com/tech%2Flaptop.svg"
+  i-file: "https://icons.terrastruct.com/essentials%2F257-file.svg"
+  i-clock: "https://icons.terrastruct.com/essentials%2F226-alarm%20clock.svg"
+  i-github: "https://icons.terrastruct.com/dev%2Fgithub.svg"
+}
+
+classes: {
+  # Not built yet: Phase 3 in docs/build-plan.md
+  planned: {
+    style: {
+      stroke-dash: 4
+      opacity: 0.6
+    }
+  }
+  aws: {
+    style: {
+      fill: "#FFF8F0"
+      stroke: "#E7A33E"
+    }
+  }
+  azure: {
+    style: {
+      fill: "#F0F6FF"
+      stroke: "#3B82C4"
+    }
+  }
+  outside: {
+    style: {
+      fill: "#F6F6F6"
+      stroke: "#9AA0A6"
+    }
+  }
+  decline: {
+    style: {
+      fill: "#FDECEC"
+      stroke: "#C0392B"
+    }
+  }
+  good: {
+    style: {
+      fill: "#EAF6EC"
+      stroke: "#2E7D32"
+    }
+  }
+  question: {
+    shape: diamond
+  }
+}

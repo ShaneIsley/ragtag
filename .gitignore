@@ -1,0 +1,23 @@
+node_modules/
+evals/results/
+prototype/model/
+prototype/*.html
+__pycache__/
+.venv/
+.venv-linux/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.env
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+tfplan
+!*.tfvars.example
+.terraform.lock.hcl.bak
+.DS_Store
+# Documents saved by hand for local reference; never committed.
+ingest/docs/

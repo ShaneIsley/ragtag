@@ -1,0 +1,58 @@
+# Section 4.8: where each kind of data goes, its classification, and how long it's kept.
+...@_shared
+direction: right
+
+classes: {
+  public: {style: {fill: "#EAF6EC"; stroke: "#2E7D32"}}
+  private: {style: {fill: "#FFF4E0"; stroke: "#B26A00"}}
+  personal: {style: {fill: "#FDECEC"; stroke: "#C0392B"; stroke-width: 2}}
+}
+
+key: "Classification" {
+  class: outside
+  grid-rows: 1
+  p: "Public" {class: public}
+  r: "Private" {class: private}
+  s: "Could hold personal\ninformation: Sensitive" {class: personal}
+}
+
+visitor: "A visitor's question\nmeant to be Public; may hold\npersonal information" {icon: ${i-users}; class: personal}
+
+edge: "CloudFront\nthe edge nearest the visitor\npasses it through" {icon: ${i-cloudfront}; class: personal}
+
+app: "App, Sydney\nmasks names, contact details\nand IDs; memory only" {icon: ${i-lambda}; class: personal}
+
+models: "Models" {
+  class: outside
+  emb: "Azure OpenAI embeddings\nAustralia\nthe masked question" {icon: ${i-openai}; class: personal}
+  chat: "Azure OpenAI chat\nany region (exemption EX-01)\nmasked question and passages" {icon: ${i-openai}; class: personal}
+  bedrock: "Bedrock failover\nSydney or Melbourne" {icon: ${i-bedrock}; class: personal}
+}
+
+answer: "The answer\nto the browser only\nnot stored" {icon: ${i-browser}; class: public}
+
+kept: "Kept in Sydney" {
+  class: outside
+  traces: "Traces, aws/spans\n30 days\nIDs, timings, sources;\nno text, no IP address" {icon: ${i-xray}; class: private}
+  snapshot: "Status snapshot\ncounts only, 1 to 4\nshown as fewer than 5" {icon: ${i-s3}; class: public}
+  drift: "Drift reports\naggregates" {icon: ${i-s3}; class: private}
+  records: "Evaluation records\ngolden questions\nand answers" {icon: ${i-s3}; class: public}
+}
+
+sources: "17 UNSW pages" {
+  class: public
+  icon: ${i-web}
+}
+ingest: "Ingest, Sydney\nmasks contact details\nand IDs" {icon: ${i-lambda}; class: public}
+index: "Azure AI Search\nAustralia East\n380 passages" {icon: ${i-search}; class: public}
+
+visitor -> edge -> app
+app -> models.emb
+app -> models.chat
+app -> models.bedrock: "if Azure fails"
+app -> index: search
+app -> answer
+app -> kept.traces: "no text"
+kept.traces -> kept.snapshot: counted
+kept.traces -> kept.drift: counted
+sources -> ingest -> index

@@ -1,0 +1,30 @@
+# Section 4.2: when the app declines instead of answering.
+...@_shared
+direction: down
+
+q: "Question, 1 to 500 characters\nmasked"
+rw: "Rewrite into the broader question\nthe question alone if this fails"
+s: "Hybrid search on both\ntop 30, at most 4 per source, 12 kept"
+t: "Question's best\nsimilarity 0.40\nor more?" {class: question}
+d1: "Decline: no_match\nanswer model not called" {class: decline}
+g: Answer from the 12 passages
+f: "Azure's filter\nblocked it?" {class: question}
+dq: "Decline: question_filtered" {class: decline}
+da: "Decline: answer_filtered" {class: decline}
+n: "Reply is\nNO_ANSWER?" {class: question}
+d2: "Decline: not_in_sources" {class: decline}
+c: "Cites a passage,\nevery number\n1 to 12?" {class: question}
+d3: "Decline: no_citations\nor bad_citation" {class: decline}
+ok: "Answer, each citation\nlinked to its passage" {class: good}
+
+q -> rw -> s -> t
+t -> d1: no
+t -> g: yes
+g -> f
+f -> dq: the question
+f -> da: the answer
+f -> n: neither
+n -> d2: yes
+n -> c: no
+c -> d3: no
+c -> ok: yes

@@ -1,0 +1,19 @@
+# The evaluation gate. promptfoo asks the running app every runnable golden case over
+# HTTP (evals/provider.py) and scores each response (evals/assertions.py).
+# Run it with `make eval`; it calls the real models, about US$0.06 a run.
+description: Policy Desk golden set
+
+prompts:
+  - "{{question}}"
+
+providers:
+  - id: file://provider.py
+    label: policy-desk
+
+tests: file://promptfoo_tests.py:generate_tests
+
+evaluateOptions:
+  # The chat deployment allows 20 requests a minute. An answered case makes five (the
+  # search rewrite, the answer, and the facts, groundedness and relevance graders), so
+  # cases run one at a time: at two, run 4 hit the limit and some rewrites failed.
+  maxConcurrency: 1

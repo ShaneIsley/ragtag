@@ -1,0 +1,13 @@
+# Only what the Dockerfiles copy (Podman reads this file too). Keeps secrets and local environments out of images.
+*
+!pyproject.toml
+!uv.lock
+!app/
+!prompts/
+!ingest/
+!search/index.json
+!evals/
+evals/results/
+**/__pycache__
+**/.DS_Store
+ingest/docs/

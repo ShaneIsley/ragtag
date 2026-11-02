@@ -1,0 +1,42 @@
+/* Shared by every page: colours, type, focus, the notice and the theme switch. The
+   theme follows the device unless the visitor picks Light or Dark (data-theme). */
+:root {
+  --bg: #fbfaf8; --surface: #ffffff; --text: #1c1b19; --muted: #5d5a54;
+  --border: #d9d5ce; --accent: #1d4f91; --accent-text: #ffffff;
+  --focus: #c25e00; --notice-bg: #f3efe7; --ok: #2e7d32; --bad: #b3261e;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161513; --surface: #1f1e1b; --text: #ecebe8; --muted: #aaa69e;
+    --border: #3a3833; --accent: #8db4ec; --accent-text: #10203a;
+    --focus: #ffb15c; --notice-bg: #26241f; --ok: #81c995; --bad: #f2b8b5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161513; --surface: #1f1e1b; --text: #ecebe8; --muted: #aaa69e;
+  --border: #3a3833; --accent: #8db4ec; --accent-text: #10203a;
+  --focus: #ffb15c; --notice-bg: #26241f; --ok: #81c995; --bad: #f2b8b5;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 1.0625rem/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 46rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+h1 { font-size: 1.75rem; margin: 0 0 0.25rem; }
+h2 { font-size: 1.15rem; margin: 2rem 0 0.75rem; }
+p.lede { color: var(--muted); margin: 0 0 1.5rem; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.closing {
+  margin: 0 0 1.25rem; padding: 0.45rem 0.75rem; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--notice-bg);
+}
+.meta { color: var(--muted); font-size: 0.9rem; }
+footer { margin-top: 2rem; color: var(--muted); font-size: 0.875rem; }
+fieldset.theme { border: 0; padding: 0; margin: 0.75rem 0 0; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; align-items: center; }
+fieldset.theme legend { float: left; padding: 0; margin-right: 0.5rem; }
+fieldset.theme label { display: inline-flex; gap: 0.3rem; align-items: center; font-weight: normal; margin: 0; cursor: pointer; }

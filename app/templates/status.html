@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service status: Policy Desk</title>
+<meta name="description" content="How Policy Desk is checked, and how it's doing.">
+{% include "_theme_head.html" %}
+<style nonce="{{ nonce }}">
+  {% include "_base.css" %}
+  h3 { font-size: 1rem; margin: 1.25rem 0 0.4rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.5rem 0 0.75rem; }
+  caption { text-align: left; color: var(--muted); font-size: 0.9rem; padding-bottom: 0.35rem; }
+  th, td { text-align: left; padding: 0.4rem 0.5rem 0.4rem 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-weight: 600; }
+  td.num, th.num { text-align: right; padding-right: 0.75rem; font-variant-numeric: tabular-nums; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .bad { color: var(--bad); font-weight: 600; }
+  svg.trend { display: block; width: 10rem; height: 2.25rem; overflow: visible; }
+  svg.trend polyline { fill: none; stroke: var(--accent); stroke-width: 2; }
+  svg.trend line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+  ul.nights { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; padding: 0; margin: 0.5rem 0; }
+  ul.nights li {
+    min-width: 3.25rem; padding: 0.15rem 0.4rem; border-radius: 4px; text-align: center;
+    font-size: 0.85rem; border: 1px solid var(--border); background: var(--surface);
+  }
+  ul.nights li.fail { border-color: var(--bad); }
+  .signal { padding: 0.45rem 0.75rem; border-radius: 6px; border: 1px solid var(--focus); background: var(--notice-bg); margin: 0 0 0.5rem; }
+  dl.parts { margin: 0.5rem 0; }
+  dl.parts dt { font-weight: 600; margin-top: 1rem; }
+  dl.parts dd { margin: 0.2rem 0 0; }
+  dl.parts .asks { color: var(--muted); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <p class="meta"><a href="/">Policy Desk</a></p>
+  <h1>Service status</h1>
+  <p class="lede">How Policy Desk is checked, and how it's doing. Test questions are asked of the live service every night and every week, and the results are recorded; this page shows the latest.{% if snap %} Updated {{ snap.generated }}, Sydney time.{% endif %}</p>
+  <p class="closing">This site will be shut down at the end of November 2026.</p>
+
+  <section aria-labelledby="now-heading">
+    <h2 id="now-heading">Right now</h2>
+    {% if alarms is none %}
+      <p>Alarm states are shown on the deployed site only.</p>
+    {% elif not alarms %}
+      <p>Alarm states aren't available at the moment.</p>
+    {% else %}
+      {% set raised = alarms | rejectattr("ok") | list %}
+      <p>{% if raised %}<span class="bad">{{ raised | length }} of {{ alarms | length }} alarms raised.</span>{% else %}<span class="ok">All {{ alarms | length }} alarms are clear.</span>{% endif %} Each one emails the operator when it's raised.</p>
+      <table>
+        <caption>Alarms, now</caption>
+        <thead><tr><th scope="col">What's watched</th><th scope="col">State</th><th scope="col">Since</th></tr></thead>
+        <tbody>
+        {% for a in alarms %}
+          <tr><td>{{ a.label }}</td><td class="{{ 'ok' if a.ok else 'bad' }}">{{ a.state }}</td><td>{{ a.since }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+
+  {% if not snap %}
+    <p>The checks' results aren't available yet.</p>
+  {% else %}
+  {% set q = snap.quality %}
+  <section aria-labelledby="quality-heading">
+    <h2 id="quality-heading">Answer quality</h2>
+    {% if q.latest_full %}
+      {% set f = q.latest_full %}
+      <p>The latest full check, on {{ f.day }}, asked {{ f.cases }} test questions with known right answers and <span class="{{ 'ok' if f.passed else 'bad' }}">{{ 'passed' if f.passed else 'failed' }}</span>{% if f.warnings %}, with {{ f.warnings }} known issue{{ 's' if f.warnings != 1 }} showing{% endif %}. Each measure must stay above its minimum, set from the first measured runs.</p>
+      <table>
+        <caption>The full check's measures, latest and over the recent runs</caption>
+        <thead><tr><th scope="col">Measure</th><th scope="col" class="num">Latest</th><th scope="col" class="num">Minimum</th><th scope="col">Recent runs</th></tr></thead>
+        <tbody>
+        {% for t in trends %}
+          <tr>
+            <th scope="row">{{ t.label }}</th>
+            <td class="num">{% if t.latest is not none %}{{ "%.0f%%" | format(t.latest * 100) }}{% else %}–{% endif %}</td>
+            <td class="num">{% if t.minimum is not none %}{{ "%.0f%%" | format(t.minimum * 100) }}{% else %}–{% endif %}</td>
+            <td>{% if t.points %}<svg class="trend" viewBox="0 -2 160 40" role="img" aria-label="{{ t.description }}">{% if t.floor_y is not none %}<line x1="0" x2="160" y1="{{ t.floor_y }}" y2="{{ t.floor_y }}"/>{% endif %}<polyline points="{{ t.points }}"/></svg>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="meta">The dashed line is the minimum. Answers took {{ "%.1f" | format(f.latency_p90_s) }} seconds or less for 9 in 10 questions; the limit is {{ q.latency_p90_maximum_s }} seconds.{% if q.markers %} Changes between runs: {% for m in q.markers %}{{ m.what }} ({{ m.day }}){{ "; " if not loop.last else "." }}{% endfor %}{% endif %}</p>
+    {% else %}
+      <p>No full check has run yet.</p>
+    {% endif %}
+
+    <h3>Every night</h3>
+    {% if q.canary %}
+      <p>A shorter check of 13 test questions, covering every kind of question and the known issues:</p>
+      <ul class="nights" aria-label="The nightly check, most recent last">
+        {% for n in q.canary %}<li class="{{ '' if n.passed else 'fail' }}">{{ n.day }}<br><span class="{{ 'ok' if n.passed else 'bad' }}">{{ 'Passed' if n.passed else 'Failed' }}</span></li>{% endfor %}
+      </ul>
+    {% else %}
+      <p>No nightly check has run yet.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="judges-heading">
+    <h2 id="judges-heading">Checking the checkers</h2>
+    <p>The answers are marked by AI judges, which could change too. Every night they mark 25 fixed answers whose right marks are known; their agreement with those marks shows whether they still mark the same way.</p>
+    {% if snap.judges.runs %}
+      <table>
+        <caption>The judges' agreement with the known marks, most recent first</caption>
+        <thead><tr><th scope="col">Night</th><th scope="col" class="num">Facts</th><th scope="col" class="num">Grounded</th><th scope="col" class="num">Relevant</th></tr></thead>
+        <tbody>
+        {% for r in snap.judges.runs | reverse %}{% if loop.index <= 7 %}
+          <tr><td>{{ r.day }}</td>{% for j in ("facts", "groundedness", "relevance") %}<td class="num">{% if j in r.agreement %}{{ "%.0f%%" | format(r.agreement[j] * 100) }}{% else %}–{% endif %}</td>{% endfor %}</tr>
+        {% endif %}{% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>The judges haven't been checked yet.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="standby-heading">
+    <h2 id="standby-heading">The standby model</h2>
+    {% if snap.standby %}
+      {% set s = snap.standby %}
+      <p>If Azure OpenAI fails, Claude Haiku 4.5 on Amazon Bedrock answers instead. Its weekly check, on {{ s.day }}, asked {{ s.cases }} questions and <span class="{{ 'ok' if s.passed else 'bad' }}">{{ 'passed' if s.passed else 'failed' }}</span>: {{ "%.0f%%" | format((s.means.facts or 0) * 100) }} of expected facts stated, {{ "%.0f%%" | format((s.means.groundedness or 0) * 100) }} grounded in the passages. Its measures are recorded, not held to the main model's minimums.</p>
+    {% else %}
+      <p>The standby model hasn't been checked yet.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="drift-heading">
+    <h2 id="drift-heading">Drift</h2>
+    <p>Weekly, a check looks for anything that changed without a release: a new model version, sources that changed under the test questions, or a shift in what people ask.</p>
+    {% if snap.drift %}
+      {% set d = snap.drift %}
+      {% if d.signals %}
+        {% for s in d.signals %}<p class="signal">{{ "To act on" if s.level == "act" else "To watch" }}: {{ s.summary }}</p>{% endfor %}
+      {% else %}
+        <p><span class="ok">Nothing found</span> in the check on {{ d.day }}.</p>
+      {% endif %}
+      <p class="meta">What people ask: {{ d.mix }}.</p>
+    {% else %}
+      <p>The drift check hasn't run yet.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="issues-heading">
+    <h2 id="issues-heading">Known issues</h2>
+    {% if snap.known_issues %}
+      <p>Wrong answers found by the checks that come and go between runs. They're reported as warnings until a fix is shown to work.</p>
+      <ul>{% for k in snap.known_issues %}<li>{{ k.why }}</li>{% endfor %}</ul>
+    {% else %}
+      <p>None.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="use-heading">
+    <h2 id="use-heading">Use</h2>
+    {% if snap.usage %}
+      {% set u7, u30 = snap.usage.days_7, snap.usage.days_30 %}
+      <table>
+        <caption>People's questions, not the checks' test questions</caption>
+        <thead><tr><th scope="col"></th><th scope="col" class="num">Last 7 days</th><th scope="col" class="num">Last 30 days</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Questions</th><td class="num">{{ u7.questions }}</td><td class="num">{{ u30.questions }}</td></tr>
+          <tr><th scope="row">Answered</th><td class="num">{{ u7.answered }}</td><td class="num">{{ u30.answered }}</td></tr>
+          <tr><th scope="row">Declined</th><td class="num">{{ u7.declined }}</td><td class="num">{{ u30.declined }}</td></tr>
+          <tr><th scope="row">Personal details removed</th><td class="num">{{ u7.masked }}</td><td class="num">{{ u30.masked }}</td></tr>
+          <tr><th scope="row">Answered by the standby model</th><td class="num">{{ u7.failovers }}</td><td class="num">{{ u30.failovers }}</td></tr>
+        </tbody>
+      </table>
+      <p class="meta">Counted from {{ u30.from }}. Counts from 1 to 4 show as "fewer than 5", so no one's use can be picked out. No question or answer is kept.</p>
+    {% else %}
+      <p>Use is counted on the deployed site only.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="assurance-heading">
+    <h2 id="assurance-heading">UNSW's AI Assurance Framework</h2>
+    <p>UNSW asks anyone using an AI system to consider seven parts. For each, here's what's measured now.</p>
+    <dl class="parts">
+      {% for p in snap.assurance %}
+        <dt>{{ p.part }}</dt>
+        <dd class="asks">{{ p.asks }}</dd>
+        <dd>{{ p.signal }} {{ p.also }}</dd>
+      {% endfor %}
+    </dl>
+  </section>
+
+  <section aria-labelledby="how-heading">
+    <h2 id="how-heading">How it's checked</h2>
+    <p>The test set has {{ snap.golden.cases }} questions with known right answers, taken from UNSW's documents: questions it should answer, questions it should decline, questions with made-up personal details, and attempts to make it break its rules. {{ snap.golden.runnable }} of them are asked in the full check. Each answer is checked for the expected facts, the expected sources, made-up claims, relevance, safety, and speed.</p>
+  </section>
+  {% endif %}
+
+  <footer>
+    <p>Policy Desk is an independent demonstration, not a UNSW service. <a href="/">Ask a question</a>.</p>
+    {% include "_theme_switch.html" %}
+  </footer>
+</main>
+</body>
+</html>

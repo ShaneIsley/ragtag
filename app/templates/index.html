@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Policy Desk</title>
+<meta name="description" content="Cited answers about how AI may be used at UNSW.">
+{% include "_theme_head.html" %}
+<style nonce="{{ nonce }}">
+  {% include "_base.css" %}
+  label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
+  .hint { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.5rem; }
+  textarea {
+    width: 100%; min-height: 5.5rem; padding: 0.7rem 0.8rem; resize: vertical;
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.75rem; }
+  button {
+    font: inherit; font-weight: 600; padding: 0.55rem 1.2rem; cursor: pointer;
+    background: var(--accent); color: var(--accent-text);
+    border: 1px solid var(--accent); border-radius: 6px;
+  }
+  button[disabled] { opacity: 0.6; cursor: progress; }
+  #status { color: var(--muted); }
+  .answer {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+  .answer.declined { background: var(--notice-bg); }
+  .safety {
+    margin: 0 0 0.75rem; padding: 0.45rem 0.75rem; border-radius: 6px; font-size: 0.95rem;
+    border: 1px solid var(--focus); background: var(--notice-bg);
+  }
+  .safety strong { font-weight: 600; }
+  button.secondary { background: transparent; color: var(--accent); }
+  #other { margin-top: 1.5rem; border-top: 1px solid var(--border); }
+  .answer p { margin: 0 0 0.75rem; }
+  .answer p:last-child, .answer ul:last-child { margin-bottom: 0; }
+  .answer ul { margin: 0 0 0.75rem; padding-left: 1.25rem; }
+  sup a { text-decoration: none; font-weight: 600; padding: 0 0.1rem; }
+  ol.sources { padding-left: 0; list-style: none; margin: 0; }
+  ol.sources li {
+    border-top: 1px solid var(--border); padding: 0.75rem 0; display: grid;
+    grid-template-columns: 2.25rem 1fr;
+  }
+  .num { font-weight: 700; color: var(--muted); }
+  details { margin-top: 0.35rem; font-size: 0.95rem; }
+  summary { cursor: pointer; color: var(--accent); }
+  blockquote {
+    margin: 0.5rem 0 0; padding: 0.5rem 0.75rem; border-left: 3px solid var(--border);
+    white-space: pre-wrap; color: var(--muted);
+  }
+  #privacy { margin-top: 3rem; border-top: 1px solid var(--border); }
+  #privacy h3 { font-size: 1rem; margin: 1.25rem 0 0.4rem; }
+  #privacy p, #privacy ul { margin: 0 0 0.5rem; }
+  #privacy ul { padding-left: 1.25rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Policy Desk</h1>
+  <p class="lede">Answers about how AI may be used at UNSW, from the university's published policies and guidance. Every answer links to the passages it came from.</p>
+  <p class="closing" id="closing">This site will be shut down at the end of November 2026.</p>
+
+  <form id="ask" method="post" action="/ask" novalidate>
+    <label for="question">Your question</label>
+    <p class="hint" id="question-hint">For example: What do I need to do before using a new AI tool at UNSW?</p>
+    <textarea id="question" name="question" required maxlength="{{ max_question_chars }}"
+      aria-describedby="question-hint question-privacy"></textarea>
+    <p class="hint" id="question-privacy">Names, contact details and ID numbers are removed before your question is sent, but it's safest to leave them out. Your question may be processed outside Australia. <a href="#privacy">How your question is handled</a></p>
+    <div class="actions">
+      <button type="submit" id="submit">Ask</button>
+      <span id="status" role="status"></span>
+    </div>
+  </form>
+
+  <section id="result" aria-labelledby="answer-heading" hidden>
+    <h2 id="answer-heading" tabindex="-1">Answer</h2>
+    <p id="masked" class="hint" role="note" hidden></p>
+    <p id="safety" class="safety" role="note" hidden></p>
+    <div id="answer" class="answer"></div>
+    <p id="provenance" class="meta" hidden></p>
+    <div class="actions" id="compare-actions" hidden>
+      <button type="button" id="compare" class="secondary">Try the other model</button>
+      <span id="compare-status" role="status"></span>
+    </div>
+    <div id="sources-block" hidden>
+      <h2 id="sources-heading">Sources</h2>
+      <ol id="sources" class="sources" aria-labelledby="sources-heading"></ol>
+    </div>
+    <section id="other" aria-labelledby="other-heading" hidden>
+      <h2 id="other-heading" tabindex="-1">The other model's answer</h2>
+      <p id="other-provenance" class="meta"></p>
+      <div id="other-answer" class="answer"></div>
+      <div id="other-sources-block" hidden>
+        <h3 id="other-sources-heading">Its sources</h3>
+        <ol id="other-sources" class="sources" aria-labelledby="other-sources-heading"></ol>
+      </div>
+    </section>
+  </section>
+
+  <section id="privacy" aria-labelledby="privacy-heading">
+    <h2 id="privacy-heading">How your question is handled</h2>
+    <p>Policy Desk is an independent demonstration, not a UNSW service, and its answers aren't UNSW advice.</p>
+
+    <h3>Where your question goes</h3>
+    <ul>
+      <li>This service runs in Sydney, on Amazon Web Services.</li>
+      <li>The search runs in Australia, on Microsoft Azure.</li>
+      <li>The answer is written by Microsoft's Azure OpenAI global service. It may process your question in any country where Microsoft runs the model, including countries outside Australia and outside the OECD.</li>
+      <li>Microsoft's content safety filter rates each question and answer for harmful content and blocks the worst. If it flags your question, the rating appears above the answer.</li>
+      <li>If Azure OpenAI doesn't respond, or you choose "Try the other model", Claude Haiku 4.5 on Amazon Bedrock answers instead, processing your question in Sydney or Melbourne. Microsoft's filter doesn't rate those answers.</li>
+    </ul>
+
+    <h3>What's kept</h3>
+    <ul>
+      <li>This service doesn't store your question or its answer. Refreshing the page clears them.</li>
+      <li>It doesn't record your IP address. Its logs record errors and how long requests took, without your question, and are kept for 30 days.</li>
+      <li>If you choose a light or dark theme, your browser remembers the choice. It isn't sent anywhere.</li>
+      <li>The <a href="/status">service status page</a> shows how many questions were asked and answered over the last week and month, without any text. Counts from 1 to 4 show as "fewer than 5".</li>
+      <li>A trace of each answer is kept for 30 days to check the service is working well: which passages were found and cited, which model answered, how long each step took, what kinds of details were removed, and any content safety rating above safe. It doesn't contain your question, the answer or your IP address. The trace ID shown under an answer finds it.</li>
+      <li>Microsoft doesn't use your question to train models. If its automated checks flag a question as possible misuse, Microsoft may store it in Australia for review by its staff.</li>
+    </ul>
+
+    <h3>What's removed, and what you need to do</h3>
+    <p>Before your question goes anywhere, this service removes names, email addresses, phone numbers and ID numbers such as zIDs, and tells you what it removed. Detection can miss things, and health information isn't removed, so leave personal details out.</p>
+
+    <h3>Rules on where information goes</h3>
+    <p>UNSW's policies don't bind this service, but it follows UNSW's Information Governance Policy by choice:</p>
+    <ul>
+      <li>Clause 5.9 requires a privacy impact assessment before personal information leaves NSW. One has been done, as a self-assessment. It finds the service safe only if questions don't contain personal information.</li>
+      <li>Clause 5.10 asks for any sending of information to countries outside the OECD to be referred to UNSW's Chief Information Security Officer first. An independent service can't do that, so the answer model's global processing is recorded as an exception, relying on the safeguards on this page.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Answers come from public documents and can be wrong or out of date. Check the source before relying on an answer, and check your course outline for course rules.</p>
+    <p><a href="/status">Service status</a>: how this service is checked, and how it's doing.</p>
+    {% include "_theme_switch.html" %}
+  </footer>
+</main>
+<script nonce="{{ nonce }}">
+(() => {
+  const form = document.getElementById("ask");
+  const input = document.getElementById("question");
+  const button = document.getElementById("submit");
+  const status = document.getElementById("status");
+  const result = document.getElementById("result");
+  const heading = document.getElementById("answer-heading");
+  const answerBox = document.getElementById("answer");
+  const safetyBox = document.getElementById("safety");
+  const maskedBox = document.getElementById("masked");
+  const sourcesBlock = document.getElementById("sources-block");
+  const sourcesList = document.getElementById("sources");
+  const provenance = document.getElementById("provenance");
+  const compareActions = document.getElementById("compare-actions");
+  const compareButton = document.getElementById("compare");
+  const compareStatus = document.getElementById("compare-status");
+  const other = document.getElementById("other");
+  const otherHeading = document.getElementById("other-heading");
+  const otherProvenance = document.getElementById("other-provenance");
+  const otherAnswer = document.getElementById("other-answer");
+  const otherSourcesBlock = document.getElementById("other-sources-block");
+  const otherSourcesList = document.getElementById("other-sources");
+  let current = null;  // the question and provider of the answer on show
+
+  const sha256Hex = async (text) => {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  const el = (tag, props = {}, ...children) => {
+    const node = Object.assign(document.createElement(tag), props);
+    node.append(...children);
+    return node;
+  };
+
+  // Text with [n] markers, as nodes: each marker links to its source. `prefix` keeps
+  // the two answers' source links apart.
+  const withCitations = (text, numbers, prefix) => {
+    const parts = [];
+    let last = 0;
+    for (const m of text.matchAll(/\[(\d+)\]/g)) {
+      parts.push(text.slice(last, m.index).replace(/\*\*/g, ""));
+      const n = Number(m[1]);
+      parts.push(numbers.has(n)
+        ? el("sup", {}, el("a", { href: `#${prefix}source-${n}`, textContent: `[${n}]`,
+            ariaLabel: `Source ${n}` }))
+        : m[0]);
+      last = m.index + m[0].length;
+    }
+    parts.push(text.slice(last).replace(/\*\*/g, ""));
+    return parts;
+  };
+
+  // Paragraphs and "- " lists: all the formatting the prompt asks for.
+  const renderAnswer = (text, numbers, prefix = "") => {
+    const nodes = [];
+    let list = null;
+    for (const line of text.split("\n")) {
+      const item = line.match(/^\s*[-*•]\s+(.*)$/);
+      if (item) {
+        list = list || el("ul");
+        list.append(el("li", {}, ...withCitations(item[1], numbers, prefix)));
+        continue;
+      }
+      if (list) { nodes.push(list); list = null; }
+      if (line.trim()) nodes.push(el("p", {}, ...withCitations(line.trim(), numbers, prefix)));
+    }
+    if (list) nodes.push(list);
+    return nodes;
+  };
+
+  const renderSource = (s, prefix = "") => {
+    const where = [s.publisher, s.section].filter(Boolean).join(" · ");
+    return el("li", { id: `${prefix}source-${s.number}` },
+      el("span", { className: "num", textContent: `${s.number}.` }),
+      el("div", {},
+        el("a", { href: s.url, textContent: s.title, rel: "noopener" }),
+        el("div", { className: "meta", textContent: where }),
+        el("details", {},
+          el("summary", { textContent: "Show the passage" }),
+          el("blockquote", { textContent: s.content }))));
+  };
+
+  // Azure's content safety rating, shown only when it flags or blocks the question.
+  const showSafety = (rating) => {
+    const flags = rating ? rating.flags : [];
+    if (!flags.length && !(rating && rating.filtered)) {
+      safetyBox.hidden = true;
+      return;
+    }
+    safetyBox.replaceChildren(
+      el("strong", { textContent: "Content safety rating for this question: " }),
+      flags.length ? flags.join("; ") : "blocked");
+    safetyBox.hidden = false;
+  };
+
+  // What masking took out of the question before it was sent anywhere.
+  const showMasked = (removed) => {
+    maskedBox.hidden = !removed.length;
+    maskedBox.textContent = removed.length
+      ? `Removed from your question before it was sent: ${removed.join(", ")}.`
+      : "";
+  };
+
+  const otherProvider = (provider) => (provider === "bedrock" ? "azure" : "bedrock");
+  const otherLabel = { azure: "GPT-5 mini on Azure OpenAI", bedrock: "Claude Haiku 4.5 on Amazon Bedrock" };
+
+  // Which model wrote the answer, and why, if it wasn't the usual one.
+  const describe = (data) => {
+    if (!data.answered_by) return "No model was asked: the search found nothing relevant.";
+    let text = `Answered by ${data.answered_by}.`;
+    if (data.failover_reason) text += " Azure OpenAI didn't respond, so Amazon Bedrock answered instead.";
+    if (data.provider === "bedrock") text += " Microsoft's content safety filter doesn't rate this answer.";
+    if (data.trace_id) text += ` Trace ${data.trace_id}.`;
+    return text;
+  };
+
+  const show = (data, question) => {
+    const numbers = new Set(data.sources.map((s) => s.number));
+    showMasked(data.masked || []);
+    showSafety(data.question_safety);
+    answerBox.className = data.declined ? "answer declined" : "answer";
+    answerBox.replaceChildren(...renderAnswer(data.answer, numbers));
+    provenance.textContent = describe(data);
+    provenance.hidden = false;
+    current = data.provider ? { question, provider: data.provider } : null;
+    compareActions.hidden = !current;
+    if (current) compareButton.textContent = `Ask ${otherLabel[otherProvider(current.provider)]} instead`;
+    compareStatus.textContent = "";
+    other.hidden = true;
+    sourcesList.replaceChildren(...data.sources.map((s) => renderSource(s)));
+    sourcesBlock.hidden = data.sources.length === 0;
+    result.hidden = false;
+    heading.focus();
+  };
+
+  const showOther = (data) => {
+    const numbers = new Set(data.sources.map((s) => s.number));
+    otherAnswer.className = data.declined ? "answer declined" : "answer";
+    otherAnswer.replaceChildren(...renderAnswer(data.answer, numbers, "other-"));
+    otherProvenance.textContent = describe(data);
+    otherSourcesList.replaceChildren(...data.sources.map((s) => renderSource(s, "other-")));
+    otherSourcesBlock.hidden = data.sources.length === 0;
+    other.hidden = false;
+    otherHeading.focus();
+  };
+
+  const ask = async (question, provider = "auto") => {
+    const body = JSON.stringify({ question, provider });
+    const response = await fetch("/ask", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // CloudFront signs requests to the app; for a POST it needs the body's hash.
+        "x-amz-content-sha256": await sha256Hex(body),
+      },
+      body,
+    });
+    if (!response.ok) {
+      const detail = await response.json().catch(() => ({}));
+      throw new Error(typeof detail.detail === "string" ? detail.detail : "");
+    }
+    return response.json();
+  };
+
+  compareButton.addEventListener("click", async () => {
+    if (!current) return;
+    compareButton.disabled = true;
+    compareStatus.textContent = "Asking the other model…";
+    try {
+      showOther(await ask(current.question, otherProvider(current.provider)));
+      compareStatus.textContent = "The other model's answer is below.";
+    } catch (error) {
+      compareStatus.textContent = error.message || "Something went wrong. Please try again.";
+    } finally {
+      compareButton.disabled = false;
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const question = input.value.trim();
+    if (!question) {
+      status.textContent = "Type a question first.";
+      input.focus();
+      return;
+    }
+    button.disabled = true;
+    status.textContent = "Searching the policies…";
+    try {
+      show(await ask(question), question);
+      status.textContent = "Answer ready.";
+    } catch (error) {
+      status.textContent = error.message || "Something went wrong. Please try again.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+})();
+</script>
+</body>
+</html>

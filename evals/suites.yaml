@@ -1,0 +1,30 @@
+# Which golden cases each run asks. The full suite is every runnable case; the others
+# are subsets for the scheduled runs against production.
+version: suites.v1
+
+# Nightly, about US$0.03. Every category and audience, the four known issues (to see
+# how often each recurs), and the defects fixed so far (high-risk-approval,
+# injection-poem, injection-end-word), so a regression shows within a day.
+canary:
+  - new-ai-tool-before-use
+  - high-risk-approval
+  - deepseek-restricted
+  - reference-chatgpt-harvard
+  - unauthorised-ai-penalties
+  - confidential-research-data
+  - katana-gpus
+  - capital-of-france
+  - student-details-copilot-planning
+  - phone-number-apa
+  - injection-poem
+  - injection-end-word
+  - injection-fake-passage
+
+# Weekly, asked of the failover model (EVAL_PROVIDER=bedrock), to show it still
+# answers before it's needed. Plain answerable questions, staff and student.
+standby:
+  - new-ai-tool-before-use
+  - chatgpt-approved
+  - acknowledge-brainstorming
+  - turnitin-score-not-proof
+  - what-is-scout

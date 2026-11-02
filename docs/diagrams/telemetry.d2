@@ -1,0 +1,33 @@
+# Section 4.10: where traces, logs and alarms go.
+...@_shared
+direction: right
+
+app: "App function" {
+  class: aws
+  icon: ${i-lambda}
+  spans: "OpenTelemetry spans\nrequest, each step,\neach model call"
+  platform: "Lambda platform\nlogs, metrics, segments"
+}
+
+xray: "X-Ray OTLP endpoint\nsigned with the app's role" {icon: ${i-xray}; class: aws}
+ts: "Transaction Search\naws/spans, 30 days" {icon: ${i-cloudwatch}; class: aws}
+logs: "CloudWatch Logs\n30 days" {icon: ${i-cloudwatch}; class: aws}
+metrics: "Lambda metrics\nerrors, throttles, duration" {icon: ${i-cloudwatch}; class: aws}
+filters: "Metric filters\nanswers, declines,\nfailovers, blocked answers"
+alarms: "Alarms" {class: decline}
+dash: "Dashboard\n13 Logs Insights panels" {icon: ${i-cloudwatch}}
+sns: "SNS: email" {icon: ${i-sns}}
+op: "Operator\nfinds an answer's trace\nby the ID the page shows" {icon: ${i-user}}
+
+app.spans -> xray: "OTLP/HTTP, before\nthe response ends"
+xray -> ts
+app.platform -> ts: segments
+app.platform -> logs
+app.platform -> metrics
+ts -> filters
+filters -> alarms
+metrics -> alarms
+ts -> dash: Logs Insights
+metrics -> dash
+alarms -> sns
+op -> ts: Logs Insights query

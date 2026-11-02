@@ -1,0 +1,47 @@
+# README, How it works: the three flows, step by step.
+...@_shared
+direction: right
+grid-columns: 1
+grid-gap: 40
+
+ingest: "Ingest: weekly" {
+  direction: right
+  class: aws
+  f: "Fetch 17\nUNSW sources" {icon: ${i-web}}
+  c: "Convert to\nMarkdown"
+  m: "Mask contact details\nand identifiers"
+  k: "Split into passages\nabout 200 tokens"
+  e: "Embed changed\npassages"
+  i: "Search index\n380 passages" {shape: cylinder}
+  f -> c -> m -> k -> e -> i
+}
+
+answer: "Answer: per question" {
+  direction: right
+  class: azure
+  a: "Ask" {icon: ${i-users}}
+  m: "Mask names, contact\ndetails, identifiers"
+  w: "Rewrite a\nfollow-up" {class: planned}
+  b: "Broaden the\nquestion"
+  q: "Hybrid search\n12 passages"
+  d: "Decline if nothing\nis relevant" {class: decline}
+  g: "Answer from a\nversioned prompt\nBedrock if Azure fails"
+  x: "Check the\ncitations"
+  v: "Show the answer, its\nsources, how it was made" {class: good}
+  fb: "Flag a bad\nanswer" {class: planned}
+  a -> m -> w -> b -> q -> d -> g -> x -> v
+  v -> fb {class: planned}
+}
+
+evaluate: "Evaluate: before each release, nightly and weekly" {
+  direction: right
+  class: outside
+  gs: "Golden set\n46 cases" {icon: ${i-file}}
+  ask: "Ask the running app\nas a visitor would"
+  ch: "Ten checks\nrules and judges"
+  gate: "Gate\nthresholds and\nknown issues" {class: question}
+  rec: "Record the run\nwith its kind" {icon: ${i-s3}}
+  mail: "Email if it fails" {icon: ${i-sns}}
+  gs -> ask -> ch -> gate -> rec
+  gate -> mail
+}

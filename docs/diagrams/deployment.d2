@@ -1,0 +1,37 @@
+# Section 4.9: two ways a release reaches production, through the same deploy script.
+...@_shared
+direction: down
+
+gh: "GitHub Actions: a push to main" {
+  class: outside
+  icon: ${i-github}
+  checks: "Lint, types, tests,\nTerraform validation"
+  gate: "Evaluation gate, when answer\nfiles changed: the candidate\nimage asked 40 questions" {class: question}
+  build: "Build, scan and push\nthe three images" {icon: ${i-ecr}}
+  checks -> gate
+  gate -> build: "passes,\nrecorded as\na release run"
+}
+
+hand: "By hand: make release" {
+  class: outside
+  icon: ${i-laptop}
+  check: "A passing release run\nfor this fingerprint?" {class: question}
+  override: "RELEASE_OVERRIDE=\"why\"\nrecorded" {class: decline}
+  push: "Build and push\nthe three images" {icon: ${i-ecr}}
+  confirm: "Confirm the deploy"
+  check -> push: yes
+  check -> override: no
+  override -> push
+  push -> confirm
+}
+
+deploy: "scripts/deploy.sh" {
+  class: aws
+  fns: "Point the three functions\nat the new images" {icon: ${i-lambda}}
+  health: "/health reports\nthe new version" {class: good}
+  canary: "Post-deploy canary\nagainst production, recorded" {icon: ${i-clock}}
+  fns -> health -> canary
+}
+
+gh.build -> deploy.fns
+hand.confirm -> deploy.fns

@@ -1,0 +1,30 @@
+# Section 4.5: the weekly ingest, one source at a time.
+...@_shared
+direction: down
+
+y: "sources.yaml\n17 sources" {icon: ${i-file}}
+lic: "Licence\nverified?" {class: question}
+skip: Skipped {class: decline}
+f: "Fetch with httpx\nrobots.txt, one request per host every 10 s" {icon: ${i-web}}
+kind: "PDF or\nweb page?" {class: question}
+pdf: "PyMuPDF4LLM\nlayout mode"
+web: "MarkItDown on the\npage's main element"
+sec: "Keep the listed sections\nmask contact details and identifiers\nPresidio"
+ch: "Split by headings,\nthen about 800 characters"
+h: "Content hash\nchanged?" {class: question}
+same: "Left as is" {class: good}
+emb: "Embed in batches of 64\nupload to the index" {icon: ${i-search}}
+pr: "Remove passages and sources\nno longer listed"
+
+y -> lic
+lic -> skip: no
+lic -> f: yes
+f -> kind
+kind -> pdf: PDF
+kind -> web: page
+pdf -> sec
+web -> sec
+sec -> ch -> h
+h -> same: no
+h -> emb: yes
+emb -> pr

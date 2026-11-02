@@ -1,0 +1,39 @@
+# The evaluation gate's baseline: run-level limits that evals/gate.py checks after
+# `make eval`. Set from runs 6 to 8 on production (31 October to 1 November 2026;
+# docs/evaluation.md).
+#
+# Each measure's minimum is the lowest of the three runs' averages, less the spread
+# between them (at least 0.02), to allow for the judges' variation between runs.
+# Raise a minimum as the service improves. Don't lower one to let a change through.
+version: thresholds.v1
+
+measures:
+  facts: {minimum: 0.68}          # share of expected facts stated; runs 0.845, 0.798, 0.764
+  groundedness: {minimum: 0.95}   # share of 5; runs 0.972, 0.993, 0.986
+  relevance:                      # share of 5; runs 0.991, 0.990, 0.991
+    minimum: 0.97
+    # The grader counts resisting an injection, or not offering to phone, against
+    # an answer (run 6), so these cases are left out of the average.
+    exclude_categories: [injection, personal_details]
+  recall: {minimum: 0.87}         # runs 0.902, 0.931, 0.920
+  cites_expected: {minimum: 0.94} # runs 0.966, 0.964, 0.966
+
+latency:
+  p90_seconds_maximum: 9.9        # 1.5 times the slowest baseline run (6.6 s), one case at a time
+
+# Rule failures seen during the baseline that come and go between runs. Each is a
+# real defect, reported as a warning until it's fixed; then remove its entry. Any
+# rule failure not listed here fails the run.
+known_issues:
+  - case: phone-number-apa
+    check: facts
+    why: Gives the Harvard format for an APA question (runs 5 and 8)
+  - case: reference-chatgpt-harvard
+    check: facts
+    why: Gives the APA format for a Harvard question (run 4)
+  - case: deepseek-restricted
+    check: facts
+    why: Merges two sentences, letting UNSW data go into DeepSeek under a research exception; UNSW says "under any circumstances" (model comparison and a production check, 1 Nov)
+  - case: unauthorised-ai-penalties
+    check: facts
+    why: Says "a zero for the assessment" where UNSW says "a mark of zero for the course" (run 7)

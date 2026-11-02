@@ -1,0 +1,42 @@
+# Section 4.1: answering one question.
+...@_shared
+
+shape: sequence_diagram
+b: Browser
+cf: CloudFront
+a: App on Lambda
+sm: Secrets Manager
+c: Azure OpenAI chat
+e: Azure OpenAI embeddings
+s: Azure AI Search
+br: Bedrock
+x: X-Ray
+
+b -> cf: "POST /ask: the question, and its SHA-256"
+cf -> a: the same request, signed with SigV4
+cold: First request after a cold start {
+  a -> sm: read the keys in one batch call
+}
+a -> a: "mask names, contact details and IDs (Presidio)"
+a -> c: "rewrite.v2, minimal reasoning"
+c -> a: "the broader question it's a case of"
+a -> e: embed the question and the rewrite
+e -> a: two vectors
+a -> s: "one hybrid request: both texts, both vectors, top 30"
+s -> a: "passages, fused scores, the question's similarity"
+a -> a: "at most 4 per source; 12 kept"
+low: "The question's best similarity is below 0.40" {
+  a -> a: "decline: no_match; the answer model isn't called"
+}
+answer: Otherwise {
+  a -> c: "answer.v4 with 12 numbered passages, low reasoning"
+  c -> a: "an answer citing [n], or NO_ANSWER; safety ratings"
+  failover: "Azure failed or throttled (never a blocked question)" {
+    a -> br: "the same prompt, Converse API"
+    br -> a: an answer
+  }
+  a -> a: check the citations
+}
+a -> x: "the request's spans, signed, before the response ends"
+a -> cf: "the answer or decline, its sources, how it was made, the trace ID"
+cf -> b: the response

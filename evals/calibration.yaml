@@ -1,0 +1,274 @@
+# Judge calibration: fixed answers whose verdicts are known, scored nightly by the
+# evaluation's three judges (evals/calibration.py). If a judge's verdicts drift while
+# these answers stay the same, the judge changed, not the service.
+#
+# Each case is a golden case (evals/golden.yaml): its question and expected facts. The
+# passages are what the answers cite, copied from the index on 2 November 2026. Each
+# case has five answers, written by hand from those passages:
+# - good: states every fact, cites only what the passages say
+# - omits: leaves one fact out
+# - contradicts: gets one fact wrong
+# - unsupported: adds a claim the passages don't make
+# - off_topic: answers something else
+#
+# Reviewed by Shane on 2 November 2026.
+version: calibration.v1
+minimum_agreement: null
+cases:
+- case: confidential-research-data
+  passages:
+  - number: 1
+    source_id: unsw-ai-responsible-research
+    section: AI and the Responsible Conduct of Research at UNSW > 4.3 Confidential and sensitive information
+    content: |-
+      Researchers must not upload confidential, personal, commercially sensitive or otherwise restricted information into AI systems unless:
+      - they are authorised to do so;
+      - appropriate safeguards are in place; and
+      - the use complies with applicable University policies, ethics approvals, agreements and legal obligations.
+  - number: 2
+    source_id: unsw-using-chatgpt-edu
+    section: Using ChatGPT Edu > FAQ > Data, Privacy & Safe Use > Is it safe to use ChatGPT Edu with sensitive
+      university data (such as health data)?
+    content: |-
+      Sensitive data, particularly health information, should not be entered without consent due to legal restrictions. Consider the privacy requirements applying to the information and comply with them. Research data remains subject to contractual and third-party restrictions. There is no blanket permission to use ChatGPT Edu or any AI tool for all research purposes. Researchers are responsible for understanding restrictions applying to their research data.
+  answers:
+  - kind: good
+    expect:
+      facts: [stated, stated]
+      groundedness: {at_least: 4}
+      relevance: {at_least: 4}
+    text: Only in limited cases. You must not upload confidential research data into an AI tool unless
+      you're authorised to, appropriate safeguards are in place, and the use complies with University
+      policies, ethics approvals, agreements and the law [1]. There's no blanket permission to use ChatGPT
+      Edu or any other AI tool for research data, and you're responsible for knowing the restrictions
+      on yours, such as contract and third-party terms [2].
+  - kind: omits
+    expect:
+      facts: [stated, missing]
+    text: Only in limited cases. You must not upload confidential research data into an AI tool unless
+      you're authorised to, appropriate safeguards are in place, and the use complies with University
+      policies, ethics approvals, agreements and the law [1].
+  - kind: contradicts
+    expect:
+      facts: [contradicted, stated]
+      groundedness: {at_most: 3}
+    text: Yes. Confidential research data can go into any AI tool once you've removed people's names from
+      it; no other approval is needed [1]. There's no blanket permission to use ChatGPT Edu for every
+      research purpose, so check any contract terms on your data [2].
+  - kind: unsupported
+    expect:
+      groundedness: {at_most: 3}
+    text: Only in limited cases. You must not upload confidential research data into an AI tool unless
+      you're authorised to, appropriate safeguards are in place, and the use complies with University
+      policies, ethics approvals, agreements and the law [1]. Every upload is also logged and reviewed
+      by the Research Ethics Board within 48 hours [1]. There's no blanket permission to use ChatGPT Edu
+      or any other AI tool for research data [2].
+  - kind: off_topic
+    expect:
+      relevance: {at_most: 2}
+    text: UNSW's libraries are open from 8 am to 10 pm on weekdays during term, and group study rooms
+      can be booked online.
+- case: high-risk-approval
+  passages:
+  - number: 1
+    source_id: unsw-ig-policy-ai
+    section: 'Information Governance Policy > Information Governance Policy > Section 6: Use of Artificial
+      Intelligence Systems or Tools Procedure > 2. AI self-assurance assessment'
+    content: |-
+      2.1 Before any AI system or tool (other than for using an approved, deployed enterprise grade system i.e. CoPilot) is used an AI self-assurance assessment must be conducted.
+      2.2 The AI self-assurance assessment (based on the New South Wales Government’s AI Assurance Framework) comprises the following elements that must be considered before using an AI system or tool:
+      a. sensitive data - The AI system or tool does not involve the use or creation of highly sensitive, sensitive, commercial and/or personal data without consent/approval
+      b. harm - The AI system or tool is respectful of fundamental human rights, the rights of the child and/or the environment
+  - number: 2
+    source_id: unsw-using-chatgpt-edu
+    section: Using ChatGPT Edu > FAQ > Functionalities & Other AI Tools > I want a new AI tool that’s
+      not centrally offered by UNSW
+    content: |-
+      If you want to use a new AI tool, before using or purchasing a new AI tool:
+      1. Submit a request through the appropriate UNSW process.
+      The proposed tool will need to be assessed against relevant University requirements.
+      2. Allow time for the request to be reviewed.
+      Depending on the tool and its intended use, the request may need to be considered through relevant UNSW review and governance channels, such as the Architecture Review Board. Submission of a request does not mean the tool will be approved.
+      3. Wait for a formal decision before making any purchase or commitment.
+      Following assessment, the request may be approved, approved with conditions, or not approved. Do not purchase, subscribe to, or otherwise commit to using the tool until the required approval has been provided.
+  answers:
+  - kind: good
+    expect:
+      facts: [stated, stated]
+      groundedness: {at_least: 4}
+      relevance: {at_least: 4}
+    text: UNSW's documents don't name one approver; approval comes through UNSW's review process. Before
+      any AI system or tool is used, an AI self-assurance assessment must be conducted [1]. You then submit
+      a request through the appropriate UNSW process, and it may be considered through UNSW review and
+      governance channels such as the Architecture Review Board. Wait for a formal decision before buying
+      or using the system [2].
+  - kind: omits
+    expect:
+      facts: [missing, stated]
+    text: Before any AI system or tool is used, an AI self-assurance assessment must be conducted [1].
+      It covers sensitive data and harm, among other things [1].
+  - kind: contradicts
+    expect:
+      facts: [stated, contradicted]
+      groundedness: {at_most: 3}
+    text: 'Submit a request through the appropriate UNSW process; it may be considered through UNSW review
+      and governance channels such as the Architecture Review Board [2]. You can start using the system
+      straight away: the AI self-assurance assessment can be completed within the first year of use [1].'
+  - kind: unsupported
+    expect:
+      groundedness: {at_most: 3}
+    text: Before any AI system or tool is used, an AI self-assurance assessment must be conducted [1].
+      You then submit a request through the appropriate UNSW process, and it may be considered through
+      UNSW review and governance channels such as the Architecture Review Board [2]. A high-risk system
+      also needs the Vice-Chancellor's personal sign-off [2].
+  - kind: off_topic
+    expect:
+      relevance: {at_most: 2}
+    text: To reset your zPass, go to the IT Service Centre and follow the steps for a forgotten password.
+- case: turnitin-score-not-proof
+  passages:
+  - number: 1
+    source_id: unsw-teaching-ai-tools
+    section: Access to AI tools > AI Writing Detection by Turnitin > Should I use Turnitin’s AI writing
+      detection tool?
+    content: |-
+      There is no expectation to use the tool, but staff will likely want access to it and should apply professional judgment to its reports.
+      Like the Similarity test, the Turnitin AI detection tool will not definitively prove misconduct but alerts markers to investigate further. Other detection tools are being announced but should not be used until they comply with UNSW data privacy obligations.
+      There is no fool-proof way to detect AI-generated text. The issue is complex because authors can add quirks during editing that do not resemble AI, such as deliberate spelling mistakes or asking GenAI to imitate a specific author's style.
+  - number: 2
+    source_id: unsw-teaching-ai-tools
+    section: Access to AI tools > AI Writing Detection by Turnitin > When could a false positive occur?
+    content: |-
+      Turnitin’s AI writing detection model only looks for prose sentences contained in long-form writing, such as an essay or extended response. Hence it can return false positives for:
+      * Short documents with only a few hundred words, where the prediction will be mostly “all or nothing.”
+      * Lists without a lot of structural variation.
+      * Text that literally repeats itself.
+      * Text that has been paraphrased without developing new ideas.
+  answers:
+  - kind: good
+    expect:
+      facts: [stated, stated, stated]
+      groundedness: {at_least: 4}
+      relevance: {at_least: 4}
+    text: 'No. A high Turnitin AI score doesn''t prove misconduct: it alerts the marker to investigate
+      further, and staff should apply their own professional judgement to the report [1]. The tool can
+      also give false positives, for example on short documents of a few hundred words, or on lists [2].'
+  - kind: omits
+    expect:
+      facts: [stated, stated, missing]
+    text: 'No. A high Turnitin AI score doesn''t prove misconduct: it alerts the marker to investigate
+      further, and staff should apply their own professional judgement to the report [1].'
+  - kind: contradicts
+    expect:
+      facts: [stated, contradicted, stated]
+      groundedness: {at_most: 3}
+    text: No. A high Turnitin AI score alerts the marker to investigate further [1]. In that investigation,
+      markers should go by the tool's score rather than their own judgement, because the detector is more
+      reliable than a person [1]. The tool can give false positives on short documents or lists [2].
+  - kind: unsupported
+    expect:
+      groundedness: {at_most: 3}
+    text: 'No. A high Turnitin AI score doesn''t prove misconduct: it alerts the marker to investigate
+      further, and staff should apply their own professional judgement to the report [1]. The detector
+      is 98% accurate on essays over 1,000 words, so above that length a high score settles it [2].'
+  - kind: off_topic
+    expect:
+      relevance: {at_most: 2}
+    text: Census date for each term is the Sunday of week 4; drop a course before then to avoid paying
+      for it.
+- case: acknowledge-brainstorming
+  passages:
+  - number: 1
+    source_id: unsw-ai-referencing
+    section: Referencing AI in assessments > Frequently Asked Questions (FAQs) > Should I cite AI tools
+      if I have not included any outputs in my work?
+    content: |-
+      When using AI tools in academic work, it's crucial to acknowledge their impact on your research and ideas for the sake of academic integrity. This includes any significant assistance from AI, such as clarifying concepts, identifying literature, or influencing the research direction, regardless of whether AI-generated content is directly quoted.
+      Acknowledging AI contributions maintains transparency and integrity, whether they've provided content, influenced themes and arguments, or supported research and analysis.
+  - number: 2
+    source_id: unsw-student-using-ai
+    section: Using Artificial Intelligence (AI) in university > Learn about our stance on Artificial Intelligence
+      (AI) > Unsure about using AI in your work?
+    content: |-
+      When using AI in your assessment, a simple principle to remember is:
+      **If you are given permission and wish to use AI in the process of planning, designing, or writing your assessment, you should always clearly acknowledge this.**
+      AI referencing guide
+  answers:
+  - kind: good
+    expect:
+      facts: [stated, stated]
+      groundedness: {at_least: 4}
+      relevance: {at_least: 4}
+    text: Yes. Acknowledge significant help from AI, such as clarifying concepts, finding literature or
+      shaping your ideas and direction, even if you don't quote anything it produced [1]. And if you've
+      been given permission to use AI in planning, designing or writing your assessment, always acknowledge
+      it clearly [2].
+  - kind: omits
+    expect:
+      facts: [stated, missing]
+    text: Yes. Acknowledge significant help from AI, such as clarifying concepts, finding literature or
+      shaping your ideas and direction, even if you don't quote anything it produced [1].
+  - kind: contradicts
+    expect:
+      facts: [contradicted, missing]
+      groundedness: {at_most: 3}
+    text: No. You only need to acknowledge AI when you quote or paraphrase text it produced; using it
+      to brainstorm ideas doesn't need acknowledging [1].
+  - kind: unsupported
+    expect:
+      groundedness: {at_most: 3}
+    text: Yes. Acknowledge significant help from AI, such as clarifying concepts, finding literature or
+      shaping your ideas and direction, even if you don't quote anything it produced [1]. The acknowledgement
+      must be made on UNSW's official AI declaration form and sent to your Dean before the due date [2].
+  - kind: off_topic
+    expect:
+      relevance: {at_most: 2}
+    text: Moodle course pages open a week before term starts, and your class timetable is in myUNSW.
+- case: buy-ai-tool-reimburse
+  passages:
+  - number: 1
+    source_id: unsw-using-chatgpt-edu
+    section: Using ChatGPT Edu > FAQ > Functionalities & Other AI Tools > Can I purchase an AI tool not
+      offered by UNSW for UNSW related work and claim reimbursement?
+    content: |-
+      No. AI tools are ICT products or services and require approval before purchase.
+      Under Schedule 7 of the Delegations Policy, all ICT products must be formally approved before acquisition. If an AI tool is not listed on the Certified Technology Products list, approval is required from the Architecture Review Board or an authorised CIO-level delegate.
+      Any purchase involving expenditure must also be approved in advance by a person with the appropriate financial delegation.
+      AI tools may create data, security, privacy, copyright and legal risks. Staff should therefore not purchase AI tools independently and seek reimbursement afterwards. Reimbursement does not replace the requirement for prior ICT, procurement and information governance approval.
+  answers:
+  - kind: good
+    expect:
+      facts: [stated, stated, stated]
+      groundedness: {at_least: 4}
+      relevance: {at_least: 4}
+    text: No. AI tools are ICT products, and they must be approved before they're bought [1]. If a tool
+      isn't on the Certified Technology Products list, the approval has to come from the Architecture
+      Review Board or an authorised CIO-level delegate, and any spending must also be approved in advance
+      by someone with the right financial delegation [1]. Reimbursement afterwards doesn't replace those
+      approvals [1].
+  - kind: omits
+    expect:
+      facts: [stated, missing, stated]
+    text: No. AI tools are ICT products, and they must be approved before they're bought [1]. Any spending
+      must also be approved in advance by someone with the right financial delegation, and reimbursement
+      afterwards doesn't replace that [1].
+  - kind: contradicts
+    expect:
+      facts: [stated, stated, contradicted]
+      groundedness: {at_most: 3}
+    text: No. AI tools are ICT products, and they must be approved before they're bought; a tool not on
+      the Certified Technology Products list needs the Architecture Review Board or an authorised CIO-level
+      delegate [1]. Once the tool is approved, you can pay with your own card and have the spending approved
+      afterwards, when you claim it back [1].
+  - kind: unsupported
+    expect:
+      groundedness: {at_most: 3}
+    text: No. AI tools are ICT products, and they must be approved before they're bought [1]. If a tool
+      isn't on the Certified Technology Products list, the approval has to come from the Architecture
+      Review Board or an authorised CIO-level delegate, and any spending must also be approved in advance
+      by someone with the right financial delegation [1]. Subscriptions under A$100 a year are exempt
+      from these approvals [1].
+  - kind: off_topic
+    expect:
+      relevance: {at_most: 2}
+    text: Staff parking permits are renewed each January through the Estate Management portal.

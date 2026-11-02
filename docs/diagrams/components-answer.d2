@@ -1,0 +1,48 @@
+# Section 3.2: the parts that answer a question, and where they run.
+...@_shared
+direction: right
+
+browser: Browser\none server-rendered page {icon: ${i-browser}}
+
+edge: AWS edge {
+  class: aws
+  cf: "CloudFront\nHTTPS, signs each request" {icon: ${i-cloudfront}}
+}
+
+syd: AWS Sydney {
+  class: aws
+  app: "Lambda: app\nFastAPI + Web Adapter, 1 GB" {icon: ${i-lambda}}
+  secrets: "Secrets Manager\nkeys, read at start-up" {icon: ${i-secrets}}
+  xray: "X-Ray\nthe request's spans" {icon: ${i-xray}}
+  ddb: "DynamoDB\nflagged answers" {icon: ${i-dynamodb}; class: planned}
+  snap: "S3: status snapshot\nwritten by the scheduled\nevaluation" {icon: ${i-s3}}
+  alarms: "CloudWatch alarms\ntheir states, now" {icon: ${i-cloudwatch}}
+}
+
+aue: Azure Australia East {
+  class: azure
+  emb: "Azure OpenAI embeddings\ntext-embedding-3-small, Standard" {icon: ${i-openai}}
+  idx: "Azure AI Search\nFree tier, 380 passages" {icon: ${i-search}}
+}
+
+global: Azure, any region {
+  class: azure
+  chat: "Azure OpenAI chat\ngpt-5-mini, GlobalStandard" {icon: ${i-openai}}
+}
+
+au: AWS Australia: Sydney or Melbourne {
+  class: aws
+  bedrock: "Bedrock AU profile\nClaude Haiku 4.5" {icon: ${i-bedrock}}
+}
+
+browser -> edge.cf: HTTPS
+edge.cf -> syd.app: SigV4-signed
+syd.app -> syd.secrets
+syd.app -> syd.xray: spans, signed
+syd.app -> syd.ddb {class: planned}
+syd.app -> syd.snap: "/status reads"
+syd.app -> syd.alarms: "/status reads"
+syd.app -> aue.emb: embed the question
+syd.app -> aue.idx: hybrid search, query key
+syd.app -> global.chat: rewrite, answer
+syd.app -> au.bedrock: failover

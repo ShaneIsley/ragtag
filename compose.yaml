@@ -1,0 +1,44 @@
+# Runs the app and the ingest job locally, from the same images Lambda runs, against the Azure
+# services in .env (terraform output -raw local_env > .env).
+#   podman compose up --build                  the app at http://localhost:8001, and its
+#                                              traces at http://localhost:16686 (Jaeger)
+#   podman compose --profile ingest run --rm ingest --dry-run
+#                                              the ingest job (drop --dry-run to index)
+# On a Mac, start Podman's VM first: podman machine init (once), podman machine start.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    platform: linux/arm64
+    env_file: .env
+    # Traces go to the collector below; these override .env.
+    environment:
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+    depends_on: [jaeger]
+    ports:
+      - "127.0.0.1:8001:8000"
+    # Here, not in the Dockerfile: Podman's OCI images don't carry HEALTHCHECK. On
+    # Lambda the web adapter checks /health before sending requests.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+
+  # The local OpenTelemetry collector: Jaeger 2 is built on the OpenTelemetry
+  # Collector, takes OTLP, and shows each trace. Traces are kept in memory only.
+  jaeger:
+    image: docker.io/jaegertracing/jaeger:2.22.0
+    ports:
+      - "127.0.0.1:16686:16686"
+
+  ingest:
+    build:
+      context: .
+      dockerfile: Dockerfile.ingest
+    platform: linux/arm64
+    env_file: .env
+    profiles: [ingest]
+    # The image starts the Lambda runtime client; run the job directly instead.
+    entrypoint: ["python", "-m", "ingest"]

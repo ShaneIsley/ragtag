@@ -1,0 +1,46 @@
+# Section 4.7: trust boundaries, and what each function may use.
+...@_shared
+direction: right
+
+internet: Internet, untrusted {
+  class: outside
+  v: "Visitor's browser" {icon: ${i-browser}}
+}
+
+acct: AWS account {
+  class: aws
+  cf: CloudFront {icon: ${i-cloudfront}}
+  url: "Function URL\nAWS_IAM auth"
+  app: "App function\nrole policy-desk-app" {icon: ${i-lambda}}
+  sched: "EventBridge Scheduler\nrole policy-desk-scheduler" {icon: ${i-eventbridge}}
+  ing: "Ingest function\nrole policy-desk-ingest" {icon: ${i-lambda}}
+  ev: "Eval function\nrole policy-desk-eval\nreaches the app only\nthrough CloudFront" {icon: ${i-lambda}}
+  sm: Secrets Manager {icon: ${i-secrets}}
+  s3: "S3: evaluation records" {icon: ${i-s3}}
+  xray: X-Ray {icon: ${i-xray}}
+  br: "Bedrock\nAU profile" {icon: ${i-bedrock}}
+
+  cf -> url: "SigV4, TLS 1.2"
+  url -> app
+  sched -> ing: invoke
+  sched -> ev: invoke
+  app -> sm: 4 secrets
+  ing -> sm: 2 secrets
+  ev -> sm: 1 secret
+  app -> xray: put spans
+  app -> br: invoke the model
+  ev -> s3: "write runs/monitor/\nand the lock, only"
+}
+
+az: Azure subscription {
+  class: azure
+  oai: Azure OpenAI {icon: ${i-openai}}
+  srch: Azure AI Search {icon: ${i-search}}
+}
+
+internet.v -> acct.cf: HTTPS
+acct.app -> az.oai: API key
+acct.app -> az.srch: "query key, read only"
+acct.ing -> az.oai: API key
+acct.ing -> az.srch: admin key
+acct.ev -> az.oai: "API key, the judges"

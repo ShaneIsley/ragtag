@@ -1,0 +1,189 @@
+# Policy Desk sources
+# The documents the app answers from: UNSW's public policies and guidance on AI.
+# Licence terms were checked on 22 October 2026 (the last nine sources on
+# 31 October 2026) and must be rechecked before each re-ingest. est_chunks assumes about 150 words per chunk.
+# classification uses the most open level of a typical university scheme.
+# sections (optional) keeps only those headings and what sits under them, for a
+# source that is one part of a larger page. A bold line that is only a clause
+# number and title, such as **3.2. We are accurate**, counts as a heading.
+
+sources:
+- id: unsw-ig-policy-ai
+  collection: UNSW policies and guidance
+  title: 'Information Governance Policy, Section 6: Use of AI Systems or Tools'
+  url: https://www.unsw.edu.au/governance/policy/policy-hub/informationgovernancepolicy.html
+  sections:
+  - 'Section 6: Use of Artificial Intelligence Systems or Tools Procedure'
+  publisher: UNSW
+  published: v1.1, May 2025
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 17
+- id: unsw-ai-responsible-research
+  collection: UNSW policies and guidance
+  title: AI and the Responsible Conduct of Research at UNSW
+  url: https://www.unsw.edu.au/content/dam/images/unsw-wide/planning-assurance/websites/2026-05-21/ai-and-the-responsible-conduct-of-research-at-unsw.pdf
+  publisher: UNSW
+  published: Aug 2026
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 9
+- id: unsw-teaching-ai-guidelines
+  collection: UNSW policies and guidance
+  title: UNSW's AI Guidelines and Framework
+  url: https://www.teaching.unsw.edu.au/ai/guidelines
+  publisher: UNSW Teaching Gateway
+  published: Mar 2025
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 6
+- id: unsw-teaching-ai-assessment
+  collection: UNSW policies and guidance
+  title: Guidance on AI in assessment
+  url: https://www.teaching.unsw.edu.au/ai/ai-assessment-guidance
+  publisher: UNSW Teaching Gateway
+  published: Nov 2025
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 10
+- id: unsw-student-using-ai
+  collection: UNSW policies and guidance
+  title: Using AI in university
+  url: https://www.unsw.edu.au/student/managing-your-studies/academic-skills-support/toolkit/ai
+  publisher: UNSW Students
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 11
+- id: unsw-myit-ai
+  collection: UNSW policies and guidance
+  title: AI@UNSW
+  url: https://www.unsw.edu.au/myit/emerging-technologies/ai
+  publisher: UNSW IT
+  published: Sep 2026
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 14
+- id: unsw-teaching-scout
+  collection: UNSW policies and guidance
+  title: Scout, the student support agent
+  url: https://www.teaching.unsw.edu.au/scout
+  publisher: UNSW Teaching Gateway
+  published: Oct 2025
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 7
+- id: unsw-code-of-conduct
+  collection: UNSW policies and guidance
+  title: Code of Conduct and Values, AI sections
+  url: https://www.unsw.edu.au/governance/policy/policy-hub/codeofconductandvalues
+  sections:
+  - '3.2. We are accurate, transparent and operate with integrity when we conduct or communicate our studies,
+    research, work and identity'
+  publisher: UNSW
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 6
+- id: unsw-ai-assurance-framework
+  collection: UNSW policies and guidance
+  title: AI Assurance Framework
+  url: https://www.unsw.edu.au/myit/emerging-technologies/ai/ai-assurance-framework
+  publisher: UNSW IT
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 31
+- id: unsw-using-copilot
+  collection: UNSW policies and guidance
+  title: Using Copilot Chat
+  url: https://www.unsw.edu.au/myit/services/software-applications/using-copilot-chat
+  publisher: UNSW IT
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 13
+- id: unsw-ai-referencing
+  collection: UNSW policies and guidance
+  title: AI referencing guide
+  url: https://www.unsw.edu.au/student/managing-your-studies/academic-skills-support/toolkit/referencing/ai-referencing
+  publisher: UNSW Students
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 14
+- id: unsw-teaching-ai-tools
+  collection: UNSW policies and guidance
+  title: Access to AI tools
+  url: https://www.teaching.unsw.edu.au/ai/tools
+  publisher: UNSW Teaching Gateway
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 21
+- id: unsw-plagiarism-policy
+  collection: UNSW policies and guidance
+  title: Plagiarism Policy and Student Plagiarism Management Procedure, AI sections
+  url: https://www.unsw.edu.au/content/dam/pdfs/governance/policy/2022-01-policies/plagiarismpolicy.pdf
+  sections:
+  - 1. Types of plagiarism
+  - 1. Poor scholarship or plagiarism detected
+  - 'Template 1: Notice to student raising concerns over misuse of generative AI'
+  publisher: UNSW
+  published: effective 13 May 2026
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 12
+- id: unsw-using-chatgpt-edu
+  collection: UNSW policies and guidance
+  title: Using ChatGPT Edu
+  url: https://www.unsw.edu.au/myit/services/software-applications/using-chat-gpt
+  publisher: UNSW IT
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 57
+- id: unsw-ai-legal-fact-sheet
+  collection: UNSW policies and guidance
+  title: 'Legal & Compliance Fact Sheet: Artificial Intelligence (AI)'
+  url: https://www.unsw.edu.au/content/dam/images/myit/2026-08-ai/2026-08-artificial-intelligence-legal-and-compliance-fact-sheet.pdf
+  publisher: UNSW Legal & Compliance
+  published: Aug 2026
+  licence: '"© UNSW Sydney 2026. All rights reserved." Copying needs UNSW''s permission, or must rely on fair dealing.'
+  licence_status: conditional
+  classification: Public
+  est_chunks: 28
+- id: unsw-student-copilot
+  collection: UNSW policies and guidance
+  title: Using Microsoft Copilot Chat (students)
+  url: https://www.unsw.edu.au/student/managing-your-studies/academic-skills-support/toolkit/ai/copilot
+  publisher: UNSW Students
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 13
+- id: unsw-teaching-guide-students
+  collection: UNSW policies and guidance
+  title: Helping you guide your students
+  url: https://www.teaching.unsw.edu.au/ai/guidance-to-student
+  publisher: UNSW Teaching Gateway
+  published: undated
+  licence: UNSW site notice only. Copying needs UNSW's permission, or must rely on fair dealing.
+  licence_status: conditional
+  classification: Public
+  est_chunks: 11

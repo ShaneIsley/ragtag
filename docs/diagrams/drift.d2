@@ -1,0 +1,31 @@
+# Section 4.11: the weekly drift checks.
+...@_shared
+direction: right
+
+inputs: "What it reads" {
+  class: outside
+  runs: "Run records\nmonitor, post-deploy,\ncalibration" {icon: ${i-s3}}
+  ingest: "The ingest's record\nwhat changed in each source" {icon: ${i-s3}}
+  golden: "Golden set\nwhich sources each\ncase rests on" {icon: ${i-file}}
+  spans: "Spans in aws/spans\nvisitors' questions only,\nno text" {icon: ${i-cloudwatch}}
+}
+
+checks: "Drift checks: Mondays, 5 am" {
+  class: aws
+  icon: ${i-lambda}
+  models: "Models\na version not seen before"
+  sources: "Sources\ngolden cases to check\nagainst changed text"
+  quality: "Quality\na measure or a judge's\nagreement at a new low"
+  mix: "Question mix\nthis week against a\nbaseline week, PSI"
+}
+
+report: "drift/latest.json\nfor the status page" {icon: ${i-s3}; class: aws}
+alarm: "Drift alarm\nemail when there's\nsomething to act on" {icon: ${i-sns}; class: decline}
+
+inputs.runs -> checks.models
+inputs.runs -> checks.quality
+inputs.ingest -> checks.sources
+inputs.golden -> checks.sources
+inputs.spans -> checks.mix
+checks -> report
+checks -> alarm: signals to act on

@@ -1,0 +1,40 @@
+# Section 3.2: the scheduled jobs, what they use, and monitoring.
+...@_shared
+direction: right
+
+syd: AWS Sydney {
+  class: aws
+  sched: "EventBridge Scheduler\nSydney time" {icon: ${i-eventbridge}}
+  ingest: "Lambda: ingest, 2 GB\nMondays 3 am" {icon: ${i-lambda}}
+  eval: "Lambda: eval, 3 GB\ncalibration and canary nightly\nfull Mondays 4 am, standby 4:30" {icon: ${i-lambda}}
+  records: "S3\nevaluation records" {icon: ${i-s3}}
+  ecr: "ECR\napp, ingest and eval images" {icon: ${i-ecr}}
+  cw: "CloudWatch\nlogs, spans, alarms, dashboard" {icon: ${i-cloudwatch}}
+  sns: "SNS\nalarm email" {icon: ${i-sns}}
+
+  sched -> ingest
+  sched -> eval
+  eval -> records: record and results
+  ingest -> cw: a failed source
+  eval -> cw: a failed run
+  cw -> sns
+}
+
+cf: "CloudFront and the app\nproduction, as a visitor sees it" {icon: ${i-cloudfront}; class: aws}
+unsw: UNSW websites\n17 sources {icon: ${i-web}; class: outside}
+
+aue: Azure Australia East {
+  class: azure
+  emb: Azure OpenAI embeddings {icon: ${i-openai}}
+  idx: Azure AI Search {icon: ${i-search}}
+}
+global: Azure, any region {
+  class: azure
+  chat: Azure OpenAI chat {icon: ${i-openai}}
+}
+
+syd.ingest -> unsw: fetch
+syd.ingest -> aue.emb: changed passages
+syd.ingest -> aue.idx: upload, admin key
+syd.eval -> cf: golden questions
+syd.eval -> global.chat: the judges

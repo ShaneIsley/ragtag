@@ -1,0 +1,27 @@
+{# The theme switch: Auto follows the device. Hidden without script, where it couldn't work.
+   The choice stays in this browser and is sent nowhere. #}
+<fieldset class="theme" id="theme" hidden>
+  <legend>Theme</legend>
+  <label><input type="radio" name="theme" value="auto"> Auto</label>
+  <label><input type="radio" name="theme" value="light"> Light</label>
+  <label><input type="radio" name="theme" value="dark"> Dark</label>
+</fieldset>
+<script nonce="{{ nonce }}">
+(() => {
+  const root = document.documentElement;
+  let saved = "auto";
+  try { saved = localStorage.getItem("theme") || "auto"; } catch (e) { /* follow the device */ }
+  for (const radio of document.querySelectorAll('#theme input[name="theme"]')) {
+    radio.checked = radio.value === saved;
+    radio.addEventListener("change", () => {
+      try {
+        if (radio.value === "auto") localStorage.removeItem("theme");
+        else localStorage.setItem("theme", radio.value);
+      } catch (e) { /* the choice lasts for this page only */ }
+      if (radio.value === "auto") delete root.dataset.theme;
+      else root.dataset.theme = radio.value;
+    });
+  }
+  document.getElementById("theme").hidden = false;
+})();
+</script>
