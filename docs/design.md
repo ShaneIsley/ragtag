@@ -185,11 +185,18 @@ How each step behaves:
 - **Fetching.** The user agent is `PolicyDesk-ingest`, honest about what it is. Fetching respects robots.txt and `Crawl-delay: 10`. A full run takes about two minutes, mostly that delay.
 - **Converting web pages.**
   - Navigation, sidebars and filters are removed before conversion.
-  - FAQ accordion buttons become headings, so each answer keeps its question.
+  - FAQ accordion buttons become headings, one level below the heading they sit under, so each answer keeps its question. The headings inside an accordion's panel go below its question, so a panel's sections stay inside it (the Hexamester 6 framework's AI Assessment Modes had been filed under the framework before them).
+  - A card's subheadings are nested under its title, so a card with a subheading doesn't read as two cards.
+  - Formatting that holds only a space (`aims<i> </i>to`) keeps the space, which MarkItDown would drop.
   - Cloudflare's obfuscated email links are replaced with a placeholder, which also keeps hashes stable between runs.
-- **Converting PDFs.** Bold clause lines such as `**3.2. …**` count as headings.
-- **Sections.** Some sources list the sections to keep: for example, clause 3.2 of the Code of Conduct, and the AI parts of the Plagiarism Policy.
-- **Chunking.** LangChain's Markdown header splitter first, then a recursive splitter at 800 characters (about 200 tokens) with a 100-character overlap. Each passage keeps its heading path, such as `Using ChatGPT Edu > FAQ > …`, which becomes the citation's section.
+- **Converting PDFs.** Bold clause lines such as `**3.2. …**` count as headings. Table of contents rows (a title, dots and a page number) are dropped. The legal fact sheet is a two-column table on every page, bold labels on the left and their text on the right, which layout mode read across both columns. It's read with PyMuPDF itself (`label_column` in `sources.yaml`): each label heads the text beside and below it, the type sizes give the titles, and the header row repeated on each page is dropped.
+- **Cleaning the text.**
+  - No-break and other Unicode spaces become plain spaces. LangChain's header splitter deletes them as unprintable, which had joined 84 words across the corpus ("theCyber SecurityPolicy").
+  - Links become their text. A line that is only a link (menus, related pages) is dropped, unless it's in a list that follows a sentence, such as "Critical policies to consider include:". Menus follow a heading ("See also") or another link.
+  - An empty heading is dropped: it started a section with no name, taking the text below it from its real heading. A line break inside a table cell becomes a space.
+- **Sections.** Some sources list the sections to keep: for example, clause 3.2 of the Code of Conduct, the Information Governance Policy's clause 6 and its Section 6 procedure, and the scope and AI parts of the Plagiarism Policy.
+- **Chunking.** LangChain's Markdown header splitter first, then a recursive splitter at 800 characters (about 200 tokens) with a 100-character overlap. Each passage keeps its heading path, such as `Using ChatGPT Edu > FAQ > …`, which becomes the citation's section. A split keeps a sentence's full stop with it. A piece under 60 characters is dropped, unless it's a section's whole text and at least five words: under its question, "The report is only visible to teachers and not students." is the answer.
+- **Section outlines.** A section with three or more subsections starts with a line naming them, in the page's words: "This section covers: Business value; Sensitive data; …". Search sends at most 4 passages from one source, so without it an answer about a section's parts sees only some of them. There's no outline for a page's top heading, a list of FAQ questions, or a line longer than one passage: those would match questions they don't answer.
 - **Skipping unchanged content.** Each passage's `content_hash`, which is also its ID, is a hash of its source's details, its section and its text. Unchanged passages keep their IDs and aren't re-embedded.
 - **Failures.** One source failing doesn't stop the others, and its passages from the last good run stay. Any failure fails the run, which sets off the `ingest_failed` alarm. Failed runs aren't retried, so a problem doesn't cause repeated crawling.
 - **Rebuilding.** The job creates the index from `search/index.json` if it's missing, so a deleted Free-tier index is one run away.

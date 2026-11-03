@@ -1,6 +1,6 @@
 from dataclasses import replace
 
-from ingest.chunk import CHUNK_CHARS, chunk_markdown
+from ingest.chunk import CHUNK_CHARS, OUTLINE_PREFIX, chunk_markdown
 from ingest.sources import Source
 
 SENTENCE = "Agencies must keep a register of AI use cases and review it every year. "
@@ -22,6 +22,23 @@ DOC = f"""# NSW AI Operational Policy
 
 The Governance Board approves high-risk AI systems before they are deployed.
 """
+
+
+PARTS = [
+    "Business value",
+    "Sensitive data",
+    "Harm",
+    "Fairness",
+    "Transparency & accountability",
+    "Resilience & safety",
+    "Compliance",
+]
+BODY = "This part has an overview and key questions to consider before deploying AI.\n\n"
+FRAMEWORK = (
+    "# AI Assurance Framework\n\n## What factors should you consider?\n\n"
+    "Each part should be used to guide decision making.\n\n"
+    + "".join(f"### {part}\n\n{BODY}" for part in PARTS)
+)
 
 
 def test_heading_path_is_kept(source: Source) -> None:
@@ -77,3 +94,38 @@ def test_embedding_text_includes_title_and_section(source: Source) -> None:
     chunk = chunk_markdown(source, DOC)[-1]
     assert chunk.embedding_text.startswith("Test policy\nNSW AI Operational Policy > ")
     assert chunk.content in chunk.embedding_text
+
+
+def test_a_section_names_its_subsections_first(source: Source) -> None:
+    # Search sends at most 4 passages from a page, so an answer saw 2 of the 7 parts.
+    first = next(c for c in chunk_markdown(source, FRAMEWORK) if c.section.endswith("consider?"))
+    assert first.content.startswith(f"{OUTLINE_PREFIX}{'; '.join(PARTS)}.")
+    assert "Each part should be used" in first.content
+
+
+def test_no_outline_for_a_page_an_faq_a_short_list_or_a_long_one(source: Source) -> None:
+    def outlined(markdown: str) -> list[str]:
+        return [c.section for c in chunk_markdown(source, markdown) if OUTLINE_PREFIX in c.content]
+
+    named = [f"Part {n} of the assurance framework" for n in range(3)]
+    page = "# Framework\n\n" + "".join(f"## {name}\n\n{BODY}" for name in named)
+    faq = "# Framework\n\n## FAQ\n\n" + "".join(
+        f"### Can I use {name}?\n\n{BODY}" for name in named
+    )
+    short = "# Framework\n\n## Parts\n\n" + "".join(f"### {name}\n\n{BODY}" for name in named[:2])
+    long = "# Framework\n\n## Parts\n\n" + "".join(
+        f"### Part {n}: {'a long name ' * 6}\n\n{BODY}" for n in range(12)
+    )
+    nested = "# Framework\n\n## Parts\n\n" + "".join(f"### {name}\n\n{BODY}" for name in named)
+    assert outlined(nested) == ["Framework > Parts"]
+    assert outlined(page) == outlined(faq) == outlined(short) == outlined(long) == []
+
+
+def test_a_short_whole_answer_is_kept(source: Source) -> None:
+    doc = (
+        "# Turnitin\n\n## Who can see the AI detection report?\n\n"
+        "The report is only visible to teachers.\n\n## Checklist\n\nOpen PDF\n"
+    )
+    assert [c.content for c in chunk_markdown(source, doc)] == [
+        "The report is only visible to teachers."
+    ]

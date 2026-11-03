@@ -37,7 +37,14 @@ def test_only_rejects_unknown_ids() -> None:
 def test_sections_filter_loads() -> None:
     by_id = {s.id: s for s in load_sources()}
     assert by_id["unsw-ig-policy-ai"].sections == (
+        "6. Use of AI systems or tools",
         "Section 6: Use of Artificial Intelligence Systems or Tools Procedure",
     )
     assert by_id["unsw-code-of-conduct"].sections[0].startswith("3.2. We are accurate")
     assert by_id["unsw-myit-ai"].sections == ()
+
+
+def test_label_column_loads_as_a_number() -> None:
+    by_id = {s.id: s for s in load_sources()}
+    assert by_id["unsw-ai-legal-fact-sheet"].label_column == 140.0
+    assert by_id["unsw-ai-responsible-research"].label_column is None

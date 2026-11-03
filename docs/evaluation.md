@@ -432,3 +432,63 @@ The answer path didn't change between the two runs, only the status page was add
 
 **Run 15**, the release run for the status page's fixes (`0e3fdb6`), passed with no warnings: facts 0.822, groundedness 1.000, relevance 0.991, recall 0.933, cites_expected 0.967, latency p90 6.7 s, 9 minutes 55 seconds.
 
+
+## Runs 16 and 17: the first gate runs on GitHub (2 and 3 November 2026)
+
+From 2 November the pipeline's gate is the release run: it runs the candidate image on GitHub's runner against the real Azure services and records the run in S3 (`runs/release/`). **Run 16**, the first, passed with no failures. Its deploy's post-deploy canary passed too, against the same version (`9eca6e031df2`).
+
+**Run 17** failed. It tested a change to documents, tests and the CI workflow only, so the answer path was the same as run 16's. Every measure was above its minimum:
+
+| Measure | Run 17 | Minimum |
+|---|---|---|
+| `facts` | 0.756 | 0.68 |
+| `groundedness` | 1.000 | 0.95 |
+| `relevance` | 1.000 | 0.97 |
+| `recall` | 0.933 | 0.87 |
+| `cites_expected` | 0.967 | 0.94 |
+| Latency, 90th percentile | 8.7 s | 9.9 s |
+
+One rule failed: `assurance-framework-parts` ("What does UNSW's AI Assurance Framework ask me to consider?"). The answer said the framework has seven parts and listed seven, but left out Harm and Resilience & safety, and added "alternatives to using AI". A contradicted fact fails a case on its own. The deploy didn't run, so production stayed on run 16's version. There was also one known-issue warning: `phone-number-apa` gave a citation in its own wording instead of the APA format.
+
+### What it found: the answer couldn't see the seven parts
+
+- **The page names the parts only in their own sections.** Its overview says "each of the 7 parts", and each part is a card with its own heading, so each is its own passage. No passage lists all seven.
+- **Search sends at most 4 passages from one page,** and the overview took 2 of them. So the answer saw the count and two parts. In the five kept full runs before run 17, it stated both facts twice and one of two three times (judged as leaving one out). Run 17's answer filled in the list, taking "alternatives to using AI" from the last sentence of the Compliance section.
+- **The conversion had damaged the same passages.** LangChain's header splitter deletes no-break and narrow no-break spaces as unprintable, which joined 84 words across the corpus ("theCyber SecurityPolicy", "aVendor Security Risk Assessment"). MarkItDown dropped formatting that held only a space ("aimstoestablish"). Our own cleaning dropped lists of links that a sentence introduces: "Critical policies to consider include:" was followed by nothing, here and in the Information Governance Policy.
+
+### The fix: section outlines and the conversion
+
+A section with three or more subsections now starts with a line naming them, in the page's words ("This section covers: Business value; Sensitive data; Harm; Fairness; Transparency & accountability; Resilience & safety; Compliance."). The framework's Transparency card has a subheading of its own, which now sits under the card's title, so the line names seven parts, not eight. There's no outline for a page's top heading, a list of FAQ questions, or a line longer than one passage: an FAQ's outline would repeat a visitor's question word for word and hold none of the answer. Unicode spaces become plain spaces, a whitespace-only `<i> </i>` keeps its space, and a list a sentence introduces keeps its links' text (21 items, in two sources).
+
+84 joined words become one, a web address printed in the legal fact sheet's text.
+
+### A full review of parsing and chunking (3 November 2026)
+
+Two faults had been in every passage since the first ingest, so the whole pipeline was then checked against the sources themselves, not against our own Markdown. All 17 sources were fetched once and chunked with the code before and after each fix. For each web page, the ground truth was every text block in the raw HTML with its nearest heading, and the accordion items and cards that contain it. For each PDF it was PyMuPDF's plain text. Four checks:
+
+- **Coverage.** Every block of five words or more should be in a passage (by shared four-word sequences), and every heading in a section path.
+- **Sections.** A passage holding a block should end its path with the block's nearest heading and include every accordion question or card title around it.
+- **Faithfulness.** No words the source doesn't have, and no Markdown or HTML left in a passage.
+- **Masking.** Everything Presidio replaced in the documents, read one by one.
+
+What it found and fixed, besides the faults above:
+
+| Fault | Effect | Fix |
+|---|---|---|
+| An accordion's question was always a level-6 heading | The headings inside its panel climbed out of it. The Hexamester 6 framework's AI Assessment Modes were filed under the framework before them; clauses 3.1 and 3.2 of the Information Governance Policy's AI procedure, and 3.2 of the Code of Conduct, lost their parent; the ChatGPT Edu sign-in steps lost "How do I access ChatGPT Edu?" | The question goes one level below the heading it sits under, the panel's headings below it |
+| Text under 60 characters was dropped | A short answer and its question vanished: "The report is only visible to teachers and not students." and "This is available to all UNSW staff and students." | A section's whole text is kept at five words or more |
+| An empty heading (`##`) started a nameless section | "AI capability framework for teaching staff" lost its text | Empty headings are dropped |
+| A list of links after a sentence ending in a full stop was dropped as a menu | The AI Assurance Framework's three Cyber Security and Data Classification standards | A list after any sentence keeps its links' text |
+| Table cells' line breaks stayed as `<br>` | 39 in the Plagiarism Policy's passages, often mid-sentence | They become spaces |
+| A split put the full stop at the start of the next passage | 4 passages began ". " | Sentences keep their full stop |
+
+After the fixes the section check flags 20 passages, all explained: a sentence the page repeats in two sections, a clause line our conversion counts as a heading and the check doesn't, and one heading masking changed (fixed below).
+
+**Three more, decided with Shane the same day:**
+- **The legal fact sheet's two-column tables.** PyMuPDF4LLM's layout mode read the "Legal issue | Risks" pages line by line across both columns, splicing a label into the text beside it in five passages ("on how such privacy laws information can be used"), and turned the header row repeated on each page into headings. Its standard mode keeps the columns apart but reads the whole label column first, and the PDF's bookmarks give truncated headings. The fact sheet is now read with PyMuPDF itself, line by line (`label_column: 140` in `sources.yaml`): each bold label heads the text beside and below it, the type sizes give the document's and each page's title, and the repeated header row and running footers are dropped. All its passages now read as the PDF does, under headings that match it: "Contravention of privacy laws", "Contractual warranties and representations", "Copyright ownership and protection" with its three subheadings. One box figure on page 2 ("films; sound recordings; broadcasts and published editions") still reads out of order.
+- **Sign-in addresses were masked.** ChatGPT Edu's instructions give the address to sign in with (`zID@ad.unsw.edu.au`, and "not name@unsw.edu.au"), which masking replaced with "[email address]". Documents now keep these formats, which are nobody's address; questions still lose every address. Every other replacement was a real contact address or phone number.
+- **Two section filters left out AI clauses.** They now also keep the Information Governance Policy's own clause "6. Use of AI systems or tools" (6.1 to 6.6), and the Plagiarism Policy's scope, which defines plagiarism as including "generative artificial intelligence output". The policy's table of contents, which sat in its scope, is dropped, as contents rows now are everywhere. The rubric rows on misusing AI stay out, to keep what's copied small.
+
+Chunked offline, 380 passages become 410: 210 unchanged, 26 with an outline. Re-ingested the same afternoon, from a Mac: 410 passages, 200 added, 210 unchanged and 170 removed, as the offline comparison predicted. That run isn't recorded in S3 (boto3 couldn't use the CLI's `aws login` credentials without `botocore[crt]`), so the drift check won't list its source changes. The release run measures every case after it.
+
+**Left as the source has them:** the AI Assurance Framework's stray paragraph about Copilot under "What factors should you consider?", an instruction marked up as a heading on the assessment guidance page, and spelling such as "a lso". Contact details are masked as decided.

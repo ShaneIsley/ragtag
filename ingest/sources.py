@@ -22,6 +22,9 @@ class Source:
     est_chunks: int
     # Headings to keep, for a source that is one part of a larger page. Empty keeps all.
     sections: tuple[str, ...] = field(default=())
+    # For a PDF laid out as a two-column table, bold row labels left of this x position
+    # (in points) and their text to the right (ingest/convert.py, labelled_rows_to_markdown).
+    label_column: float | None = None
 
     @property
     def unverified(self) -> bool:
@@ -32,9 +35,15 @@ def load_sources(path: Path = SOURCES_FILE) -> list[Source]:
     data = yaml.safe_load(path.read_text())
     sources = []
     for s in data["sources"]:
-        fields = {k: str(v) for k, v in s.items() if k not in ("est_chunks", "sections")}
+        special = ("est_chunks", "sections", "label_column")
+        fields = {k: str(v) for k, v in s.items() if k not in special}
         sources.append(
-            Source(**fields, est_chunks=int(s["est_chunks"]), sections=tuple(s.get("sections", ())))
+            Source(
+                **fields,
+                est_chunks=int(s["est_chunks"]),
+                sections=tuple(s.get("sections", ())),
+                label_column=float(s["label_column"]) if "label_column" in s else None,
+            )
         )
     return sources
 

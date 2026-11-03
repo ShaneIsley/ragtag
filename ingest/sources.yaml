@@ -6,13 +6,16 @@
 # sections (optional) keeps only those headings and what sits under them, for a
 # source that is one part of a larger page. A bold line that is only a clause
 # number and title, such as **3.2. We are accurate**, counts as a heading.
+# label_column (optional) is for a PDF laid out as a two-column table: bold row
+# labels left of that x position, in points, and their text to the right.
 
 sources:
 - id: unsw-ig-policy-ai
   collection: UNSW policies and guidance
-  title: 'Information Governance Policy, Section 6: Use of AI Systems or Tools'
+  title: 'Information Governance Policy: Use of AI Systems or Tools (clause 6 and Section 6)'
   url: https://www.unsw.edu.au/governance/policy/policy-hub/informationgovernancepolicy.html
   sections:
+  - 6. Use of AI systems or tools
   - 'Section 6: Use of Artificial Intelligence Systems or Tools Procedure'
   publisher: UNSW
   published: v1.1, May 2025
@@ -138,6 +141,7 @@ sources:
   title: Plagiarism Policy and Student Plagiarism Management Procedure, AI sections
   url: https://www.unsw.edu.au/content/dam/pdfs/governance/policy/2022-01-policies/plagiarismpolicy.pdf
   sections:
+  - Scope
   - 1. Types of plagiarism
   - 1. Poor scholarship or plagiarism detected
   - 'Template 1: Notice to student raising concerns over misuse of generative AI'
@@ -161,6 +165,8 @@ sources:
   collection: UNSW policies and guidance
   title: 'Legal & Compliance Fact Sheet: Artificial Intelligence (AI)'
   url: https://www.unsw.edu.au/content/dam/images/myit/2026-08-ai/2026-08-artificial-intelligence-legal-and-compliance-fact-sheet.pdf
+  # Its pages are two-column tables: bold labels left of x = 140 points, text right.
+  label_column: 140
   publisher: UNSW Legal & Compliance
   published: Aug 2026
   licence: '"© UNSW Sydney 2026. All rights reserved." Copying needs UNSW''s permission, or must rely on fair dealing.'

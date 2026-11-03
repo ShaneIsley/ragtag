@@ -30,7 +30,7 @@ Policy Desk answers questions from UNSW staff, students and researchers about ho
 | Search | Azure AI Search, hybrid keyword and vector, Free tier | 12 passages per question, at most 4 from any one source |
 | Failover model | Claude Haiku 4.5 on Amazon Bedrock, through the AU inference profile | The same prompt. Answers when Azure OpenAI fails, and when a person asks to "Try the other model" |
 | Content safety | Azure OpenAI's content filter, with Prompt Shields | Rates every question and answer; a blocked one is declined, and the page shows a question's rating |
-| Masking | Microsoft Presidio, with spaCy's small English model | Removes names, contact details and identifiers from every question before it goes anywhere; contact details and identifiers from the documents |
+| Masking | Microsoft Presidio, with spaCy's small English model | Removes names, contact details and identifiers from every question before it goes anywhere; contact details and identifiers from the documents, keeping the sign-in address formats the pages give |
 | Evaluation judges | The same `gpt-5-mini` with the `facts-check.v1` prompt; the Azure AI Evaluation SDK's groundedness and relevance graders | Used only to measure answers, never to write them |
 
 ### The data

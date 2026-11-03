@@ -49,6 +49,14 @@ def test_documents_lose_contact_details_but_keep_names() -> None:
     assert masked.removed == ("email address",)
 
 
+def test_documents_keep_the_sign_in_address_format_and_questions_dont() -> None:
+    text = "Sign in using your zID@ad.unsw.edu.au email address, not name@unsw.edu.au."
+    assert mask_document(text).text == text
+    assert mask_question(text).text == (
+        "Sign in using your [email address] email address, not [email address]."
+    )
+
+
 def test_the_models_and_search_see_only_the_masked_question() -> None:
     retriever = FakeRetriever([passage(1)])
     chat = FakeChat("Ask your convenor [1].")

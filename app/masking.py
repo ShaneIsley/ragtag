@@ -3,7 +3,8 @@
 Questions lose contact details, identifiers and people's names: a question about UNSW
 policy never needs a name. Documents lose contact details and identifiers only, since
 the names in UNSW's public pages are the roles and units that answers need. An
-allow-list keeps tool and service names that name detection can take for people.
+allow-list keeps tool and service names that name detection can take for people, and
+documents keep the address formats UNSW's pages give for signing in.
 """
 
 from dataclasses import dataclass
@@ -58,6 +59,12 @@ ALLOW_LIST = [
     "UNSW",
 ]
 
+# Not anyone's address: the formats UNSW's pages tell people to sign in with ("Sign in
+# using your zID@ad.unsw.edu.au email address", "not name@unsw.edu.au"). Masked, the
+# instructions read "Sign in using your [email address]". Documents only (decided 3 Nov
+# 2026); a question keeps masking every email address.
+SIGN_IN_FORMATS = ["zID@ad.unsw.edu.au", "zid@ad.unsw.edu.au", "name@unsw.edu.au"]
+
 # Detections below this score are left alone (Presidio scores 0 to 1).
 MIN_SCORE = 0.4
 
@@ -98,14 +105,14 @@ def _anonymizer() -> AnonymizerEngine:
     return AnonymizerEngine()
 
 
-def _mask(text: str, entities: list[str]) -> Masked:
+def _mask(text: str, entities: list[str], allow: list[str] = ALLOW_LIST) -> Masked:
     if not text.strip():
         return Masked(text)
     found = _analyzer().analyze(
         text=text,
         language="en",
         entities=entities,
-        allow_list=ALLOW_LIST,
+        allow_list=allow,
         score_threshold=MIN_SCORE,
     )
     if not found:
@@ -128,5 +135,5 @@ def mask_question(text: str) -> Masked:
 
 
 def mask_document(text: str) -> Masked:
-    """Contact details and identifiers; names stay."""
-    return _mask(text, DOCUMENT_ENTITIES)
+    """Contact details and identifiers; names and sign-in address formats stay."""
+    return _mask(text, DOCUMENT_ENTITIES, ALLOW_LIST + SIGN_IN_FORMATS)
