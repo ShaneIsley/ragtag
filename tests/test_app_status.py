@@ -1,6 +1,7 @@
 import io
 import json
 import re
+import time
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from typing import Any
@@ -65,7 +66,7 @@ def test_alarms_that_couldn_t_be_read_aren_t_mistaken_for_a_local_run(client: Te
 
 def test_a_missing_snapshot_is_looked_for_again_soon(monkeypatch: pytest.MonkeyPatch) -> None:
     clock = [1000.0]
-    monkeypatch.setattr(status.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(time, "monotonic", lambda: clock[0])
     found: list[dict[str, Any] | None] = [None, {"generated": "now"}]
     status.clear_cache()
     assert status._cached("snapshot", status.SNAPSHOT_TTL_S, lambda: found[0]) is None
@@ -98,7 +99,7 @@ def test_the_trend_line_puts_the_minimum_below_the_values() -> None:
 
 
 def deployed() -> Settings:
-    return Settings(_env_file=None, eval_records_bucket="records")  # type: ignore[call-arg]
+    return Settings(_env_file=None, eval_records_bucket="records")
 
 
 def test_alarms_are_labelled_in_order_and_unavailable_on_error() -> None:
@@ -142,7 +143,7 @@ def test_alarms_are_labelled_in_order_and_unavailable_on_error() -> None:
 
     status.clear_cache()
     assert status.alarms(deployed(), Broken()) == []  # "not available", not "not deployed"
-    assert status.alarms(Settings(_env_file=None)) is None  # type: ignore[call-arg]
+    assert status.alarms(Settings(_env_file=None)) is None
 
 
 def test_the_snapshot_is_read_from_the_bucket_and_cached() -> None:

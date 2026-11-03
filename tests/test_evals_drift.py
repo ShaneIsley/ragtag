@@ -1,5 +1,6 @@
 import io
 import json
+import time
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -226,7 +227,7 @@ def test_a_logs_insights_query_waits_for_its_results(monkeypatch: pytest.MonkeyP
             row = [{"field": "category", "value": "answered"}, {"field": "n", "value": "4"}]
             return {"status": "Complete", "results": [row]}
 
-    monkeypatch.setattr(drift.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(time, "sleep", lambda seconds: None)
     rows = drift.insights_query(Logs())("q", NOW - timedelta(days=7), NOW)
     assert rows == [{"category": "answered", "n": "4"}]
     assert drift.counts(rows) == {"answered": 4}

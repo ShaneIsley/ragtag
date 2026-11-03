@@ -31,7 +31,8 @@ def run(
 
 class FakeStore:
     def __init__(self, **prefixes: list[dict[str, Any]]) -> None:
-        self.prefixes, self.objects = prefixes, {}
+        self.prefixes = prefixes
+        self.objects: dict[str, Any] = {}
 
     def records(self, prefix: str) -> list[dict[str, Any]]:
         return self.prefixes.get(prefix.strip("/").replace("/", "_").replace("-", "_"), [])

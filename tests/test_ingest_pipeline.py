@@ -136,7 +136,8 @@ def test_the_record_goes_to_the_bucket_and_a_failure_doesn_t_fail_the_run(
 
     class FakeS3:
         def __init__(self, fail: bool = False) -> None:
-            self.fail, self.keys = fail, []
+            self.fail = fail
+            self.keys: list[str] = []
 
         def put_object(self, Bucket: str, Key: str, **_: Any) -> None:
             if self.fail:

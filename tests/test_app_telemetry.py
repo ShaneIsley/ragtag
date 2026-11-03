@@ -135,7 +135,7 @@ def test_an_embedding_call_gets_a_genai_span(spans: InMemorySpanExporter) -> Non
     settings = Settings(
         _env_file=None,
         azure_openai_endpoint="https://example.openai.azure.com",
-        azure_openai_api_key="key",  # type: ignore[arg-type]
+        azure_openai_api_key="key",
         azure_openai_embedding_deployment="embed",
     )
     embedder = AzureEmbedder(settings)
@@ -221,6 +221,7 @@ def test_exports_to_xray_are_signed_for_the_xray_service() -> None:
     ).prepare()
     signed = telemetry.SigV4("ap-southeast-2", Credentials("AKIDEXAMPLE", "secret"))(request)
     authorization = signed.headers["Authorization"]
+    assert isinstance(authorization, str)
     assert authorization.startswith("AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/")
     assert "/ap-southeast-2/xray/aws4_request" in authorization
     assert "X-Amz-Date" in signed.headers

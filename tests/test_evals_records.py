@@ -91,7 +91,9 @@ def test_the_served_version_comes_from_the_health_check() -> None:
     assert records.served_version("https://x.example", httpx.Client(transport=down)) is None
 
 
-def release(fingerprint: str, *, passed: bool = True, suite: str = "full", kind: str = "release"):
+def release(
+    fingerprint: str, *, passed: bool = True, suite: str = "full", kind: str = "release"
+) -> dict[str, Any]:
     return {
         "kind": kind,
         "suite": suite,

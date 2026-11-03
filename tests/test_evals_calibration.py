@@ -56,7 +56,7 @@ def expected_judges() -> Judges:
     def score(name: str) -> Callable[..., float]:
         def judge(*args: str) -> float:
             bound = getattr(by_text[args[1]], name)
-            return bound.at_least if bound.at_least is not None else bound.at_most
+            return float(bound.at_least if bound.at_least is not None else bound.at_most)
 
         return judge
 

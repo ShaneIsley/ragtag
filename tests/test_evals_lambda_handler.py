@@ -1,5 +1,7 @@
 import io
 import json
+import os
+import subprocess
 import time
 from pathlib import Path
 from typing import Any
@@ -8,7 +10,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from app.settings import Settings
-from evals import lambda_handler
+from evals import calibration, drift, gate, lambda_handler, status
 
 
 @pytest.fixture
@@ -19,24 +21,21 @@ def run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(
         lambda_handler,
         "get_settings",
-        lambda: Settings(_env_file=None, azure_openai_api_key="key"),  # type: ignore[arg-type]
+        lambda: Settings(_env_file=None, azure_openai_api_key="key"),
     )
 
     def promptfoo(args: list[str], **_: Any) -> None:
         seen["promptfoo"] = args
-        seen["env"] = {
-            k: lambda_handler.os.environ.get(k)
-            for k in ("EVAL_SUITE", "EVAL_PROVIDER", "EVAL_KIND")
-        }
+        seen["env"] = {k: os.environ.get(k) for k in ("EVAL_SUITE", "EVAL_PROVIDER", "EVAL_KIND")}
         if seen.get("writes", True):
             results.write_text(json.dumps({"results": {"results": []}}))
 
-    def gate(argv: list[str]) -> int:
+    def judged(argv: list[str]) -> int:
         seen["gate_argv"] = argv
         return int(seen["gate"])
 
-    monkeypatch.setattr(lambda_handler.subprocess, "run", promptfoo)
-    monkeypatch.setattr(lambda_handler.gate, "main", gate)
+    monkeypatch.setattr(subprocess, "run", promptfoo)
+    monkeypatch.setattr(gate, "main", judged)
     seen["status"] = 0
 
     def publish() -> None:
@@ -44,7 +43,7 @@ def run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         if seen.get("status_fails"):
             raise RuntimeError("AccessDenied")
 
-    monkeypatch.setattr(lambda_handler.status, "publish", publish)
+    monkeypatch.setattr(status, "publish", publish)
     monkeypatch.delenv("EVAL_RECORDS_BUCKET", raising=False)
     # The handler sets these for promptfoo; setenv first, so monkeypatch removes them
     # again afterwards whatever the handler wrote.
@@ -90,7 +89,12 @@ def test_calibration_runs_the_judges_without_promptfoo(
     run: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     calls: list[list[str]] = []
-    monkeypatch.setattr(lambda_handler.calibration, "main", lambda argv: calls.append(argv) or 0)
+
+    def calibrate(argv: list[str]) -> int:
+        calls.append(argv)
+        return 0
+
+    monkeypatch.setattr(calibration, "main", calibrate)
     assert lambda_handler.handler({"suite": "calibration"}, None) == {
         "suite": "calibration",
         "passed": True,
@@ -102,7 +106,7 @@ def test_calibration_runs_the_judges_without_promptfoo(
 def test_a_failed_calibration_raises_so_the_alarm_fires(
     run: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(lambda_handler.calibration, "main", lambda argv: 1)
+    monkeypatch.setattr(calibration, "main", lambda argv: 1)
     with pytest.raises(lambda_handler.GateFailed, match="calibration failed"):
         lambda_handler.handler({"suite": "calibration"}, None)
 
@@ -112,7 +116,12 @@ def test_drift_runs_without_the_lock(
 ) -> None:
     seen: list[bool] = []
     bucket.objects[lambda_handler.LOCK_KEY] = lock(time.time())  # a canary is running
-    monkeypatch.setattr(lambda_handler.drift, "main", lambda argv: seen.append(argv == []) or 0)
+
+    def check(argv: list[str]) -> int:
+        seen.append(argv == [])
+        return 0
+
+    monkeypatch.setattr(drift, "main", check)
     assert lambda_handler.handler({"suite": "drift"}, None) == {"suite": "drift", "passed": True}
     assert seen == [True]
     assert lambda_handler.LOCK_KEY in bucket.objects  # the other run's lock, untouched
@@ -166,13 +175,13 @@ def bucket(run: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> FakeS3:
     fake = FakeS3()
     monkeypatch.setenv("EVAL_RECORDS_BUCKET", "records")
     monkeypatch.setattr(lambda_handler, "s3", lambda: fake)
-    original = lambda_handler.subprocess.run
+    original = subprocess.run
 
     def promptfoo_sees_the_lock(args: list[str], **kwargs: Any) -> None:
         run["locked_during_run"] = lambda_handler.LOCK_KEY in fake.objects
         original(args, **kwargs)
 
-    monkeypatch.setattr(lambda_handler.subprocess, "run", promptfoo_sees_the_lock)
+    monkeypatch.setattr(subprocess, "run", promptfoo_sees_the_lock)
     return fake
 
 

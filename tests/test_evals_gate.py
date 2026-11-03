@@ -111,7 +111,7 @@ def test_a_standby_run_records_its_measures_without_judging_them() -> None:
 def test_a_rule_failure_fails_every_suite() -> None:
     run = results(row("a", 1000, ("outcome", False, 0.0, "expected answer, declined")))
     for suite in ("full", "canary", "standby"):
-        found, _ = verdict(summarise(run, CATEGORIES), THRESHOLDS, suite)  # type: ignore[arg-type]
+        found, _ = verdict(summarise(run, CATEGORIES), THRESHOLDS, suite)
         assert any(f.startswith("rule failed: a outcome") for f in found), suite
 
 

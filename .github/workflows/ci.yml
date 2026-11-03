@@ -74,8 +74,8 @@ jobs:
       - run: uv sync --frozen --all-groups
       - name: Lint and format
         run: uv run ruff check . && uv run ruff format --check .
-      - name: Types
-        run: uv run mypy app ingest evals
+      - name: Types, with the files pyproject.toml lists (the tests too)
+        run: uv run mypy
       - name: Unit and API tests, with fake models
         run: uv run pytest -q
 
