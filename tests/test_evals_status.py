@@ -176,3 +176,58 @@ def test_publish_writes_the_snapshot_to_the_bucket(monkeypatch: Any) -> None:
     store = FakeStore()
     status.publish(store, usage_query(0, 0, 0))
     assert set(store.objects) == {status.SNAPSHOT_KEY}
+
+
+def record(kind: str, version: str, at: str, passed: bool = True, **extra: Any) -> dict[str, Any]:
+    """A run record with only what the releases read."""
+    return {
+        "kind": kind,
+        "suite": extra.pop("suite", "full"),
+        "started_at": at,
+        "duration_s": 240,
+        "passed": passed,
+        "measured": {"version": version, "fingerprint": extra.pop("fingerprint", "a")},
+        "summary": {"tests": 40},
+        **extra,
+    }
+
+
+def test_releases_show_the_gate_then_production_newest_first() -> None:
+    # 3 Nov 2026, as it happened: one stopped, one passed on a second try, one with no gate.
+    stopped = "rule failed: assurance-framework-parts facts: 1 of 2 facts stated"
+    flaky = "rule failed: other-university-policy outcome: expected decline, answered"
+    gate = [
+        record("release", "9eca6e031df2", "2026-11-02T10:21:33Z"),
+        record("release", "1e54905616a0", "2026-11-03T01:21:28Z", False, failures=[stopped]),
+        record(
+            "release",
+            "ab24bc333370",
+            "2026-11-03T04:44:12Z",
+            False,
+            failures=[flaky],
+            fingerprint="b",
+        ),
+        record(
+            "release", "ab24bc333370", "2026-11-03T05:17:40Z", fingerprint="b", note="The review"
+        ),
+    ]
+    production = [
+        record("post-deploy", "9eca6e031df2", "2026-11-02T10:38:17Z", suite="canary"),
+        record(
+            "post-deploy", "ab24bc333370", "2026-11-03T05:35:31Z", suite="canary", fingerprint="b"
+        ),
+        record("monitor", "467f3ff8d35e", "2026-11-03T05:59:36Z", fingerprint="b"),
+    ]
+    rows = status.releases(gate, production)
+    assert [r["version"] for r in rows] == ["467f3ff", "ab24bc3", "1e54905", "9eca6e0"]
+    newest, reviewed, stopped_row, first = rows
+    assert newest["gate"] == [] and newest["released"]
+    assert newest["after"] == {"passed": True, "what": "Full check", "time": "5:03 pm"}
+    assert newest["answer_path_changed"] is False
+    assert [g["passed"] for g in reviewed["gate"]] == [False, True]
+    assert reviewed["gate"][0]["failure"] == "other-university-policy (outcome)"
+    assert reviewed["note"] == "The review" and reviewed["answer_path_changed"] is True
+    assert reviewed["after"]["what"] == "Post-deploy check" and reviewed["when"] == "3 Nov, 4:39 pm"
+    assert not stopped_row["released"] and stopped_row["after"] is None
+    assert stopped_row["gate"][0]["failure"] == "assurance-framework-parts (facts)"
+    assert first["answer_path_changed"] is None  # nothing older to compare with

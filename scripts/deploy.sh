@@ -32,7 +32,14 @@ if [ "$live" != "$tag" ]; then
 fi
 echo "$site/health reports $tag."
 
+# The release's note (RELEASE_NOTE, from the publish), for the status page's releases.
+payload=$(RELEASE_NOTE="${RELEASE_NOTE:-}" python3 -c '
+import json, os
+event = {"suite": "canary", "kind": "post-deploy"}
+if os.environ["RELEASE_NOTE"].strip():
+    event["note"] = os.environ["RELEASE_NOTE"].strip()
+print(json.dumps(event))')
 aws lambda invoke --region "$region" --function-name policy-desk-eval --invocation-type Event \
-  --payload '{"suite":"canary","kind":"post-deploy"}' --cli-binary-format raw-in-base64-out \
+  --payload "$payload" --cli-binary-format raw-in-base64-out \
   /dev/null >/dev/null
 echo "A post-deploy canary has started; it's recorded under runs/post-deploy/."

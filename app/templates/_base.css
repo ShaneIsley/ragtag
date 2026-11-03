@@ -1,25 +1,54 @@
 /* Shared by every page: colours, type, focus, the notice and the theme switch. The
-   theme follows the device unless the visitor picks Light or Dark (data-theme). */
+   theme follows the device unless the visitor picks Light or Dark (data-theme). The
+   colours are slate and teal unless they pick black and white (data-palette="reading").
+   Every text pairing meets WCAG 2.2 AA, and control edges and the focus ring 3:1;
+   tests/test_app_contrast.py checks each pairing in each palette and theme. */
 :root {
-  --bg: #fbfaf8; --surface: #ffffff; --text: #1c1b19; --muted: #5d5a54;
-  --border: #d9d5ce; --accent: #1d4f91; --accent-text: #ffffff;
-  --focus: #c25e00; --notice-bg: #f3efe7; --ok: #2e7d32; --bad: #b3261e;
+  --bg: #f5f7f7; --surface: #ffffff; --text: #142321; --muted: #4b5c5a;
+  --border: #d3dddc; --control: #788a88; --accent: #0a5f6e; --accent-text: #ffffff;
+  --focus: #b45309; --notice-bg: #e9f0ef; --ok: #1d6b3a; --bad: #b42318;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #161513; --surface: #1f1e1b; --text: #ecebe8; --muted: #aaa69e;
-    --border: #3a3833; --accent: #8db4ec; --accent-text: #10203a;
-    --focus: #ffb15c; --notice-bg: #26241f; --ok: #81c995; --bad: #f2b8b5;
+    --bg: #0e1615; --surface: #162120; --text: #e4eeec; --muted: #9fb1ae;
+    --border: #263533; --control: #6b807d; --accent: #6cc5d1; --accent-text: #04262c;
+    --focus: #f0a85c; --notice-bg: #1a2826; --ok: #74d197; --bad: #f5a59c;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #161513; --surface: #1f1e1b; --text: #ecebe8; --muted: #aaa69e;
-  --border: #3a3833; --accent: #8db4ec; --accent-text: #10203a;
-  --focus: #ffb15c; --notice-bg: #26241f; --ok: #81c995; --bad: #f2b8b5;
+  --bg: #0e1615; --surface: #162120; --text: #e4eeec; --muted: #9fb1ae;
+  --border: #263533; --control: #6b807d; --accent: #6cc5d1; --accent-text: #04262c;
+  --focus: #f0a85c; --notice-bg: #1a2826; --ok: #74d197; --bad: #f5a59c;
   color-scheme: dark;
 }
+/* Black and white, for reading: near-black on white, and light grey on near-black (pure
+   white on black halates for readers with astigmatism). No colour carries meaning. */
+:root[data-palette="reading"] {
+  --bg: #ffffff; --surface: #ffffff; --text: #111111; --muted: #474747;
+  --border: #d4d4d4; --control: #6b6b6b; --accent: #111111; --accent-text: #ffffff;
+  --focus: #111111; --notice-bg: #f0f0f0; --ok: #111111; --bad: #111111;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="reading"]:not([data-theme="light"]) {
+    --bg: #0b0b0b; --surface: #151515; --text: #ededed; --muted: #b8b8b8;
+    --border: #333333; --control: #8c8c8c; --accent: #ededed; --accent-text: #0b0b0b;
+    --focus: #ededed; --notice-bg: #222222; --ok: #ededed; --bad: #ededed;
+    color-scheme: dark;
+  }
+}
+:root[data-palette="reading"][data-theme="dark"] {
+  --bg: #0b0b0b; --surface: #151515; --text: #ededed; --muted: #b8b8b8;
+  --border: #333333; --control: #8c8c8c; --accent: #ededed; --accent-text: #0b0b0b;
+  --focus: #ededed; --notice-bg: #222222; --ok: #ededed; --bad: #ededed;
+  color-scheme: dark;
+}
+/* Atkinson Hyperlegible (Braille Institute, SIL OFL 1.1), served by this service, so no
+   other site sees the visitor. Loaded only when black and white is chosen. */
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 400; font-display: swap; src: url("/fonts/AtkinsonHyperlegible-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 700; font-display: swap; src: url("/fonts/AtkinsonHyperlegible-Bold.woff2") format("woff2"); }
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
@@ -31,12 +60,16 @@ h2 { font-size: 1.15rem; margin: 2rem 0 0.75rem; }
 p.lede { color: var(--muted); margin: 0 0 1.5rem; }
 a { color: var(--accent); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.closing {
-  margin: 0 0 1.25rem; padding: 0.45rem 0.75rem; border-radius: 6px;
-  border: 1px solid var(--border); background: var(--notice-bg);
-}
+.banner { margin: 0; padding: 0.45rem 1rem; text-align: center; font-size: 0.92rem; background: var(--notice-bg); border-bottom: 1px solid var(--border); }
 .meta { color: var(--muted); font-size: 0.9rem; }
 footer { margin-top: 2rem; color: var(--muted); font-size: 0.875rem; }
 fieldset.theme { border: 0; padding: 0; margin: 0.75rem 0 0; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; align-items: center; }
 fieldset.theme legend { float: left; padding: 0; margin-right: 0.5rem; }
 fieldset.theme label { display: inline-flex; gap: 0.3rem; align-items: center; font-weight: normal; margin: 0; cursor: pointer; }
+/* Black and white: a typeface made for legibility, set larger and looser, and cues that
+   don't depend on colour (WCAG 1.4.1): every link underlined, results marked ✓ and ✗. */
+:root[data-palette="reading"] body { font-family: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 1.125rem; line-height: 1.7; }
+:root[data-palette="reading"] a { text-decoration: underline; text-decoration-thickness: 0.08em; text-underline-offset: 0.2em; }
+:root[data-palette="reading"] :focus-visible { outline-offset: 3px; }
+:root[data-palette="reading"] .ok::before { content: "✓ "; }
+:root[data-palette="reading"] .bad::before { content: "✗ "; }

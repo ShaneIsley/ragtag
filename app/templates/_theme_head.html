@@ -1,9 +1,10 @@
-{# Applies a saved Light or Dark choice before the page draws, so it doesn't flash. #}
+{# Applies a saved theme and colours before the page draws, so it doesn't flash. #}
 <script nonce="{{ nonce }}">
 (() => {
   try {
     const theme = localStorage.getItem("theme");
     if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
-  } catch (e) { /* storage blocked: follow the device */ }
+    if (localStorage.getItem("palette") === "reading") document.documentElement.dataset.palette = "reading";
+  } catch (e) { /* storage blocked: follow the device, in the standard colours */ }
 })();
 </script>

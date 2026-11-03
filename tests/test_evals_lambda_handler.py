@@ -206,6 +206,41 @@ def test_a_run_skips_while_another_holds_the_lock(run: dict[str, Any], bucket: F
     assert bucket.objects[lambda_handler.LOCK_KEY] == held  # the other run's lock, untouched
 
 
+def test_a_deploys_check_waits_for_the_lock_and_then_runs(
+    run: dict[str, Any], bucket: FakeS3, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bucket.objects[lambda_handler.LOCK_KEY] = lock(time.time() - 60)
+    waits: list[float] = []
+
+    def sleep(seconds: float) -> None:  # the other run finishes during the second wait
+        waits.append(seconds)
+        if len(waits) == 2:
+            bucket.objects.pop(lambda_handler.LOCK_KEY)
+
+    monkeypatch.setattr(time, "sleep", sleep)
+    event = {"suite": "canary", "kind": "post-deploy", "note": "Theme switch"}
+    assert lambda_handler.handler(event, None)["passed"] is True
+    assert waits == [lambda_handler.LOCK_POLL_S] * 2
+    assert run["gate_argv"][1:] == [
+        "--kind",
+        "post-deploy",
+        "--suite",
+        "canary",
+        "--note",
+        "Theme switch",
+    ]
+
+
+def test_a_deploys_check_fails_loudly_if_the_lock_never_frees(
+    run: dict[str, Any], bucket: FakeS3, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bucket.objects[lambda_handler.LOCK_KEY] = lock(time.time() - 60)
+    monkeypatch.setattr(time, "sleep", lambda seconds: None)
+    with pytest.raises(lambda_handler.GateFailed, match="post-deploy check couldn't start"):
+        lambda_handler.handler({"suite": "canary", "kind": "post-deploy"}, None)
+    assert "promptfoo" not in run
+
+
 def test_a_lock_left_by_a_run_that_died_is_taken_over(run: dict[str, Any], bucket: FakeS3) -> None:
     bucket.objects[lambda_handler.LOCK_KEY] = lock(time.time() - lambda_handler.LOCK_STALE_S - 1)
     assert lambda_handler.handler({"suite": "canary"}, None)["passed"] is True

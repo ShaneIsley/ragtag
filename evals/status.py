@@ -78,6 +78,95 @@ def latest(runs: Sequence[Mapping[str, Any]]) -> Mapping[str, Any] | None:
     return max(runs, key=started) if runs else None
 
 
+RELEASES_SHOWN = 6
+_RULE_FAILURE = re.compile(r"^rule failed: (\S+) (\w+):")
+
+
+def finished(record: Mapping[str, Any]) -> datetime:
+    return started(record) + timedelta(seconds=float(record.get("duration_s") or 0))
+
+
+def when(moment: datetime) -> str:
+    """A time in Sydney, as the releases show it: "3 Nov, 4:39 pm"."""
+    local = moment.astimezone(SYDNEY)
+    return f"{local.day} {local:%b}, {local:%-I:%M %p}".replace("AM", "am").replace("PM", "pm")
+
+
+def failure(record: Mapping[str, Any]) -> str | None:
+    """A failed run's first failure, briefly: the case and check, or the measure."""
+    failures = record.get("failures") or []
+    if not failures:
+        return None
+    first = str(failures[0])
+    m = _RULE_FAILURE.match(first)
+    return f"{m.group(1)} ({m.group(2)})" if m else first.split(":")[0]
+
+
+def releases(
+    gate: Sequence[Mapping[str, Any]], production: Sequence[Mapping[str, Any]]
+) -> list[dict[str, Any]]:
+    """Each version, newest first: the gate's runs on it, and the first check of it on
+    production. A version the gate stopped never reached production, so it has none.
+
+    The version is the commit the app reports on /health. Whether the answer path changed
+    comes from each version's fingerprint of the answer files (evals/records.py), against
+    the version before it.
+    """
+    versions: dict[str, dict[str, list[Mapping[str, Any]]]] = {}
+    for kind, runs in (("gate", gate), ("production", production)):
+        for r in runs:
+            version = (r.get("measured") or {}).get("version")
+            if version:
+                versions.setdefault(version, {"gate": [], "production": []})[kind].append(r)
+    rows: list[dict[str, Any]] = []
+    for version, found in versions.items():
+        tries = sorted(found["gate"], key=started)
+        after = sorted(found["production"], key=started)
+        first = after[0] if after else None
+        moment = finished(first) if first else finished(tries[-1])
+        notes = [str(r["note"]) for r in (*tries, *after) if r.get("note")]
+        fingerprints = [(r.get("measured") or {}).get("fingerprint") for r in (*tries, *after)]
+        rows.append(
+            {
+                "version": version[:7],
+                "moment": moment,
+                "when": when(moment),
+                "note": notes[0] if notes else None,
+                "fingerprint": next((f for f in fingerprints if f), None),
+                "gate": [
+                    {
+                        "passed": bool(r.get("passed")),
+                        "failure": failure(r),
+                        "failures": len(r.get("failures") or []),
+                        "cases": (r.get("summary") or {}).get("tests"),
+                    }
+                    for r in tries
+                ],
+                "released": first is not None,
+                "after": None
+                if first is None
+                else {
+                    "passed": bool(first.get("passed")),
+                    "what": "Post-deploy check"
+                    if first.get("kind") == "post-deploy"
+                    else "Full check",
+                    "time": when(finished(first)).split(", ")[1],
+                },
+            }
+        )
+    rows.sort(key=lambda row: row["moment"], reverse=True)
+    for newer, older in itertools.pairwise(rows):
+        both = newer["fingerprint"] and older["fingerprint"]
+        newer["answer_path_changed"] = (
+            newer["fingerprint"] != older["fingerprint"] if both else None
+        )
+    if rows:
+        rows[-1]["answer_path_changed"] = None
+    for row in rows:
+        del row["moment"], row["fingerprint"]
+    return rows[:RELEASES_SHOWN]
+
+
 def means(record: Mapping[str, Any]) -> dict[str, float]:
     found = (record.get("summary") or {}).get("means") or {}
     return {k: round(float(v), 3) for k, v in found.items() if k in MEASURES}
@@ -335,6 +424,7 @@ def build(store: Store, query: SpanQuery | None, now: datetime | None = None) ->
     # Production runs only, scheduled or by hand, as the trend counts them.
     monitor = store.records("runs/monitor/") + store.records("runs/post-deploy/")
     calibration = store.records("runs/calibration/")
+    gate = [r for r in store.records("runs/release/") if r.get("suite") == "full"]
     report = store.get("drift/latest.json")
     full = latest([r for r in monitor if r.get("suite") == "full"])
     snap: dict[str, Any] = {
@@ -360,6 +450,7 @@ def build(store: Store, query: SpanQuery | None, now: datetime | None = None) ->
         ],
         "golden": golden_coverage(),
         "usage": usage(query, now),
+        "releases": releases(gate, monitor),
     }
     snap["assurance"] = assurance(snap, full)
     return snap

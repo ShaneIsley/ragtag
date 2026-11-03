@@ -12,7 +12,8 @@ from fastapi.testclient import TestClient
 from app import status
 from app.main import app, get_status
 from app.settings import Settings
-from tests.test_evals_status import snapshot
+from evals import status as status_build
+from tests.test_evals_status import record, snapshot
 
 SNAP = snapshot(answered=3, declined=1, masked=2)
 
@@ -180,3 +181,36 @@ def test_both_pages_offer_auto_light_and_dark(client: TestClient, path: str) -> 
 
 def test_the_privacy_notice_mentions_the_remembered_theme(client: TestClient) -> None:
     assert "your browser remembers the choice" in client.get("/").text
+
+
+@pytest.mark.parametrize("path", ["/", "/status"])
+def test_both_pages_offer_black_and_white(client: TestClient, path: str) -> None:
+    if path == "/status":
+        show(SNAP, None)
+    html = client.get(path).text
+    assert 'localStorage.getItem("palette")' in html.split("</head>")[0]
+    assert '<fieldset class="theme" id="palette" hidden>' in html
+    assert 'value="standard"' in html and 'value="reading"' in html
+
+
+def test_the_status_page_leads_with_a_summary_and_lists_releases(client: TestClient) -> None:
+    gate = [
+        record(
+            "release",
+            "1e54905616a0",
+            "2026-11-03T01:21:28Z",
+            False,
+            failures=["rule failed: assurance-framework-parts facts: wrong list"],
+        ),
+        record("release", "ab24bc333370", "2026-11-03T05:17:40Z", note="The parsing review"),
+    ]
+    production = [record("post-deploy", "ab24bc333370", "2026-11-03T05:35:31Z", suite="canary")]
+    show({**SNAP, "releases": status_build.releases(gate, production)}, ALARMS)
+    html = client.get("/status").text
+    assert html.index('class="banner"') < html.index("<main>")
+    assert html.index('aria-label="Summary"') < html.index('id="now-heading"')
+    assert "1 of 2 alarms raised" in html and "Known issues" in html
+    assert '<h2 id="releases-heading">Releases</h2>' in html
+    assert "The parsing review" in html and "Post-deploy check" in html
+    assert "Not released" in html and "assurance-framework-parts (facts)" in html
+    assert not re.search(r"\sstyle=", html)

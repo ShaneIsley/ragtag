@@ -164,7 +164,11 @@ def main(argv: Sequence[str]) -> int:
         "--kind", choices=records.KINDS, default=os.environ.get("EVAL_KIND") or None
     )
     parser.add_argument("--suite", choices=SUITES, default=os.environ.get("EVAL_SUITE") or "full")
-    parser.add_argument("--note", help="why this run was made, for the record")
+    parser.add_argument(
+        "--note",
+        default=os.environ.get("EVAL_NOTE") or None,
+        help="why this run was made, for the record; on GitHub, the release's note",
+    )
     parser.add_argument("--no-record", action="store_true", help="don't save a run record")
     args = parser.parse_args(argv)
 

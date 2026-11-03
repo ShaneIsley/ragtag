@@ -13,9 +13,9 @@
   textarea {
     width: 100%; min-height: 5.5rem; padding: 0.7rem 0.8rem; resize: vertical;
     font: inherit; color: var(--text); background: var(--surface);
-    border: 1px solid var(--border); border-radius: 6px;
+    border: 1px solid var(--control); border-radius: 6px;
   }
-  .actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.75rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.75rem; }
   button {
     font: inherit; font-weight: 600; padding: 0.55rem 1.2rem; cursor: pointer;
     background: var(--accent); color: var(--accent-text);
@@ -51,17 +51,60 @@
     margin: 0.5rem 0 0; padding: 0.5rem 0.75rem; border-left: 3px solid var(--border);
     white-space: pre-wrap; color: var(--muted);
   }
+  /* Example questions */
+  #examples h2 { margin-top: 2rem; }
+  .groups { display: grid; gap: 0.6rem; }
+  .group { display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.25rem 0.75rem; align-items: start; }
+  .who { font-size: 0.9rem; color: var(--muted); padding-top: 0.35rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; min-width: 0; }
+  button.chip {
+    font-weight: 500; font-size: 0.92rem; padding: 0.3rem 0.7rem; border-radius: 999px;
+    background: var(--surface); color: var(--accent); border: 1px solid var(--control); text-align: left;
+  }
+  button.chip:hover { border-color: var(--accent); }
+  button.chip.decline { color: var(--text); border-style: dashed; }
+  /* How this answer was made */
+  details.how { margin-top: 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); padding: 0.6rem 1rem; }
+  details.how > summary { font-weight: 600; }
+  .step { border-top: 1px solid var(--border); padding: 0.7rem 0; display: grid; grid-template-columns: 1.75rem 1fr; gap: 0 0.5rem; }
+  .step:first-of-type { margin-top: 0.6rem; }
+  .step .n { font-weight: 700; color: var(--muted); }
+  .step h3 { margin: 0 0 0.25rem; font-size: 0.98rem; }
+  .step p { margin: 0 0 0.35rem; }
+  .sent { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.85rem; background: var(--notice-bg); padding: 0.1rem 0.35rem; border-radius: 4px; }
+  ol.found { list-style: none; margin: 0.4rem 0 0; padding: 0; display: grid; gap: 0.15rem; font-size: 0.88rem; }
+  ol.found li { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) 7.5rem; gap: 0.5rem; align-items: center; padding: 0.2rem 0; }
+  .rank { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .where { min-width: 0; }
+  .where .title { font-weight: 600; }
+  .where .section { color: var(--muted); }
+  /* Its own colours, set on itself: nothing above it may override them. */
+  .cited { display: inline-block; margin-left: 0.35rem; font-size: 0.75rem; font-weight: 600; padding: 0 0.35rem; border-radius: 999px; background: var(--accent); color: var(--accent-text); }
+  .sim { display: grid; grid-template-columns: 1fr 2.6rem; gap: 0.35rem; align-items: center; font-variant-numeric: tabular-nums; }
+  .bar { position: relative; height: 0.5rem; background: var(--notice-bg); border-radius: 3px; }
+  .bar i { position: absolute; inset: 0 auto 0 0; background: var(--control); border-radius: 3px; }
+  .bar b { position: absolute; top: -0.2rem; bottom: -0.2rem; width: 2px; background: var(--text); }
+  /* How your question is handled: short first, the full text on request */
   #privacy { margin-top: 3rem; border-top: 1px solid var(--border); }
-  #privacy h3 { font-size: 1rem; margin: 1.25rem 0 0.4rem; }
-  #privacy p, #privacy ul { margin: 0 0 0.5rem; }
-  #privacy ul { padding-left: 1.25rem; }
+  .layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.75rem; margin-top: 0.75rem; }
+  .layer { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 0.9rem; min-width: 0; }
+  .layer h3 { margin: 0 0 0.25rem; font-size: 0.98rem; }
+  .layer > p { margin: 0; font-size: 0.95rem; }
+  .layer details ul, .layer details p { font-size: 0.92rem; margin: 0.4rem 0 0; }
+  .layer details ul { padding-left: 1.1rem; display: grid; gap: 0.3rem; }
+  @media (max-width: 34rem) {
+    .group { grid-template-columns: 1fr; }
+    .who { padding-top: 0; }
+    ol.found li { grid-template-columns: 1.4rem minmax(0, 1fr); }
+    ol.found .sim { grid-column: 2; }
+  }
 </style>
 </head>
 <body>
+<p class="banner" role="note">This site will be shut down at the end of November 2026.</p>
 <main>
   <h1>Policy Desk</h1>
   <p class="lede">Answers about how AI may be used at UNSW, from the university's published policies and guidance. Every answer links to the passages it came from.</p>
-  <p class="closing" id="closing">This site will be shut down at the end of November 2026.</p>
 
   <form id="ask" method="post" action="/ask" novalidate>
     <label for="question">Your question</label>
@@ -85,6 +128,10 @@
       <button type="button" id="compare" class="secondary">Try the other model</button>
       <span id="compare-status" role="status"></span>
     </div>
+    <details class="how" id="how">
+      <summary>How this answer was made</summary>
+      <div id="how-steps"></div>
+    </details>
     <div id="sources-block" hidden>
       <h2 id="sources-heading">Sources</h2>
       <ol id="sources" class="sources" aria-labelledby="sources-heading"></ol>
@@ -100,48 +147,91 @@
     </section>
   </section>
 
+  <section id="examples" aria-labelledby="examples-heading">
+    <h2 id="examples-heading">Or try one of these</h2>
+    <div class="groups">
+      <div class="group" role="group" aria-labelledby="for-staff"><span class="who" id="for-staff">For staff</span><div class="chips">
+        <button type="button" class="chip">What do I need to do before using a new AI tool at UNSW?</button>
+        <button type="button" class="chip">Who has to approve a high-risk AI system?</button>
+        <button type="button" class="chip">Can tutors use AI tools to mark assignments?</button>
+      </div></div>
+      <div class="group" role="group" aria-labelledby="for-students"><span class="who" id="for-students">For students</span><div class="chips">
+        <button type="button" class="chip">Who decides whether I can use AI in an assessment?</button>
+        <button type="button" class="chip">How do I reference ChatGPT in APA 7th edition?</button>
+      </div></div>
+      <div class="group" role="group" aria-labelledby="for-researchers"><span class="who" id="for-researchers">For researchers</span><div class="chips">
+        <button type="button" class="chip">Can I use generative AI to help write a grant application?</button>
+        <button type="button" class="chip">Can I upload confidential research data into an AI tool?</button>
+      </div></div>
+      <div class="group" role="group" aria-labelledby="for-decline"><span class="who" id="for-decline">One it should decline</span><div class="chips">
+        <button type="button" class="chip decline">What does the University of Sydney let students do with generative AI in exams?</button>
+      </div></div>
+    </div>
+  </section>
+
   <section id="privacy" aria-labelledby="privacy-heading">
     <h2 id="privacy-heading">How your question is handled</h2>
     <p>Policy Desk is an independent demonstration, not a UNSW service, and its answers aren't UNSW advice.</p>
-
-    <h3>Where your question goes</h3>
-    <ul>
-      <li>This service runs in Sydney, on Amazon Web Services.</li>
-      <li>The search runs in Australia, on Microsoft Azure.</li>
-      <li>The answer is written by Microsoft's Azure OpenAI global service. It may process your question in any country where Microsoft runs the model, including countries outside Australia and outside the OECD.</li>
-      <li>Microsoft's content safety filter rates each question and answer for harmful content and blocks the worst. If it flags your question, the rating appears above the answer.</li>
-      <li>If Azure OpenAI doesn't respond, or you choose "Try the other model", Claude Haiku 4.5 on Amazon Bedrock answers instead, processing your question in Sydney or Melbourne. Microsoft's filter doesn't rate those answers.</li>
-    </ul>
-
-    <h3>What's kept</h3>
-    <ul>
-      <li>This service doesn't store your question or its answer. Refreshing the page clears them.</li>
-      <li>It doesn't record your IP address. Its logs record errors and how long requests took, without your question, and are kept for 30 days.</li>
-      <li>If you choose a light or dark theme, your browser remembers the choice. It isn't sent anywhere.</li>
-      <li>The <a href="/status">service status page</a> shows how many questions were asked and answered over the last week and month, without any text. Counts from 1 to 4 show as "fewer than 5".</li>
-      <li>A trace of each answer is kept for 30 days to check the service is working well: which passages were found and cited, which model answered, how long each step took, what kinds of details were removed, and any content safety rating above safe. It doesn't contain your question, the answer or your IP address. The trace ID shown under an answer finds it.</li>
-      <li>Microsoft doesn't use your question to train models. If its automated checks flag a question as possible misuse, Microsoft may store it in Australia for review by its staff.</li>
-    </ul>
-
-    <h3>What's removed, and what you need to do</h3>
-    <p>Before your question goes anywhere, this service removes names, email addresses, phone numbers and ID numbers such as zIDs, and tells you what it removed. Detection can miss things, and health information isn't removed, so leave personal details out.</p>
-
-    <h3>Rules on where information goes</h3>
-    <p>UNSW's policies don't bind this service, but it follows UNSW's Information Governance Policy by choice:</p>
-    <ul>
-      <li>Clause 5.9 requires a privacy impact assessment before personal information leaves NSW. One has been done, as a self-assessment. It finds the service safe only if questions don't contain personal information.</li>
-      <li>Clause 5.10 asks for any sending of information to countries outside the OECD to be referred to UNSW's Chief Information Security Officer first. An independent service can't do that, so the answer model's global processing is recorded as an exception, relying on the safeguards on this page.</li>
-    </ul>
+    <div class="layers">
+      <div class="layer">
+        <h3>Where it goes</h3>
+        <p>This service runs in Sydney and searches in Australia. The answer is written by Microsoft's global service, which may process your question outside Australia.</p>
+        <details><summary>More about where it goes</summary>
+          <ul>
+            <li>This service runs in Sydney, on Amazon Web Services.</li>
+            <li>The search runs in Australia, on Microsoft Azure.</li>
+            <li>The answer is written by Microsoft's Azure OpenAI global service. It may process your question in any country where Microsoft runs the model, including countries outside Australia and outside the OECD.</li>
+            <li>Microsoft's content safety filter rates each question and answer for harmful content and blocks the worst. If it flags your question, the rating appears above the answer.</li>
+            <li>If Azure OpenAI doesn't respond, or you choose "Try the other model", Claude Haiku 4.5 on Amazon Bedrock answers instead, processing your question in Sydney or Melbourne. Microsoft's filter doesn't rate those answers.</li>
+          </ul>
+        </details>
+      </div>
+      <div class="layer">
+        <h3>What's kept</h3>
+        <p>Not your question or its answer: refreshing the page clears them. A trace of how each answer was made is kept for 30 days, without any text.</p>
+        <details><summary>More about what's kept</summary>
+          <ul>
+            <li>This service doesn't store your question or its answer. Refreshing the page clears them.</li>
+            <li>It doesn't record your IP address. Its logs record errors and how long requests took, without your question, and are kept for 30 days.</li>
+            <li>If you choose a theme or black and white, your browser remembers the choice. It isn't sent anywhere.</li>
+            <li>The <a href="/status">service status page</a> shows how many questions were asked and answered over the last week and month, without any text. Counts from 1 to 4 show as "fewer than 5".</li>
+            <li>A trace of each answer is kept for 30 days to check the service is working well: which passages were found and cited, which model answered, how long each step took, what kinds of details were removed, and any content safety rating above safe. It doesn't contain your question, the answer or your IP address. The trace ID shown under an answer finds it.</li>
+            <li>Microsoft doesn't use your question to train models. If its automated checks flag a question as possible misuse, Microsoft may store it in Australia for review by its staff.</li>
+          </ul>
+        </details>
+      </div>
+      <div class="layer">
+        <h3>What's removed</h3>
+        <p>Names, email addresses, phone numbers and ID numbers, before your question goes anywhere. Detection can miss things, so leave personal details out.</p>
+        <details><summary>More about what's removed</summary>
+          <p>Before your question goes anywhere, this service removes names, email addresses, phone numbers and ID numbers such as zIDs, and tells you what it removed. Detection can miss things, and health information isn't removed, so leave personal details out.</p>
+        </details>
+      </div>
+      <div class="layer">
+        <h3>The rules it follows</h3>
+        <p>UNSW's Information Governance Policy, by choice: a privacy impact assessment, and one recorded exception for the answer model.</p>
+        <details><summary>More about the rules</summary>
+          <p>UNSW's policies don't bind this service, but it follows UNSW's Information Governance Policy by choice:</p>
+          <ul>
+            <li>Clause 5.9 requires a privacy impact assessment before personal information leaves NSW. One has been done, as a self-assessment. It finds the service safe only if questions don't contain personal information.</li>
+            <li>Clause 5.10 asks for any sending of information to countries outside the OECD to be referred to UNSW's Chief Information Security Officer first. An independent service can't do that, so the answer model's global processing is recorded as an exception, relying on the safeguards on this page.</li>
+          </ul>
+        </details>
+      </div>
+    </div>
   </section>
 
   <footer>
     <p>Answers come from public documents and can be wrong or out of date. Check the source before relying on an answer, and check your course outline for course rules.</p>
     <p><a href="/status">Service status</a>: how this service is checked, and how it's doing.</p>
+    <p><a href="{{ source_url }}">How it's built</a>: the source code, design, evaluation results and runbook.</p>
     {% include "_theme_switch.html" %}
   </footer>
 </main>
 <script nonce="{{ nonce }}">
 (() => {
+  const MIN_SIMILARITY = {{ min_similarity }};
+  const PER_SOURCE = {{ per_source }};
   const form = document.getElementById("ask");
   const input = document.getElementById("question");
   const button = document.getElementById("submit");
@@ -157,6 +247,8 @@
   const compareActions = document.getElementById("compare-actions");
   const compareButton = document.getElementById("compare");
   const compareStatus = document.getElementById("compare-status");
+  const how = document.getElementById("how");
+  const howSteps = document.getElementById("how-steps");
   const other = document.getElementById("other");
   const otherHeading = document.getElementById("other-heading");
   const otherProvenance = document.getElementById("other-provenance");
@@ -258,7 +350,85 @@
     return text;
   };
 
-  const show = (data, question) => {
+  // "How this answer was made": what the response already says about each step.
+  const step = (n, title, ...body) => el("div", { className: "step" },
+    el("span", { className: "n", textContent: n }),
+    el("div", {}, el("h3", { textContent: title }), ...body));
+  const p = (...children) => el("p", {}, ...children);
+  const fixed = (x) => (x === null || x === undefined ? "–" : x.toFixed(2));
+
+  const safetyText = (rating, what) => {
+    if (!rating) return `Microsoft's content safety filter doesn't rate ${what} sent to Amazon Bedrock.`;
+    if (rating.filtered) return `Microsoft's content safety filter blocked ${what}.`;
+    if (rating.flags.length) return `Microsoft's content safety filter flagged ${what}: ${rating.flags.join("; ")}.`;
+    const rules = rating.jailbreak === false ? ", and found no attempt to override the rules" : "";
+    return `Microsoft's content safety filter rated ${what} safe${rules}.`;
+  };
+
+  const passageList = (data) => {
+    const cited = new Map(data.sources.map((s) => [s.passage_id, s.number]));
+    return el("ol", { className: "found" }, ...data.retrieved.map((r, i) => {
+      const where = el("span", { className: "where" },
+        el("span", { className: "title", textContent: r.title }), " ",
+        el("span", { className: "section", textContent: `· ${r.section.split(" > ").pop()}` }));
+      if (cited.has(r.passage_id)) where.append(el("span", { className: "cited", textContent: `cited [${cited.get(r.passage_id)}]` }));
+      // Set through the style object: the content security policy blocks style attributes.
+      const fill = el("i");
+      fill.style.width = `${Math.round((r.similarity || 0) * 100)}%`;
+      const mark = el("b");
+      mark.style.left = `${MIN_SIMILARITY * 100}%`;
+      const bar = el("span", { className: "bar", ariaHidden: "true" }, fill, mark);
+      return el("li", {},
+        el("span", { className: "rank", textContent: i + 1 }), where,
+        el("span", { className: "sim" }, bar, r.similarity === null ? "keyword" : fixed(r.similarity)));
+    }));
+  };
+
+  const answerText = (data) => {
+    const by = data.answered_by || "The model";
+    const written = data.model
+      ? `Written by ${by} (${data.model}) with prompt ${data.prompt_version}, from ${data.input_tokens.toLocaleString()} tokens in and ${data.output_tokens.toLocaleString()} out.`
+      : "";
+    switch (data.decline_reason) {
+      case "no_match": return `No model was asked: the closest passage was ${fixed(data.top_similarity)} similar to your question, below ${MIN_SIMILARITY.toFixed(2)}.`;
+      case "not_in_sources": return `${written} It found the passages don't answer the question, so the service declined.`;
+      case "no_citations": return `${written} The answer cited no passage, so the service replaced it with a decline.`;
+      case "bad_citation": return `${written} The answer cited a passage it wasn't given, so the service replaced it with a decline.`;
+      case "question_filtered": return "Microsoft's content safety filter blocked the question, so no answer was written.";
+      case "answer_filtered": return `${written} Microsoft's content safety filter blocked the answer, so it was replaced with a decline.`;
+      default: {
+        const n = data.sources.length;
+        return `${written} It cites ${n} of the ${data.retrieved.length} passages, and every citation points to a passage it was given; an answer that cited none would have been replaced by a decline.`;
+      }
+    }
+  };
+
+  const showHow = (data, ms) => {
+    const sent = data.masked.length
+      ? p("Sent on as ", el("span", { className: "sent", textContent: data.sent_question }), `. Removed first: ${data.masked.join(", ")}.`)
+      : p("Sent on as you wrote it: nothing needed removing.");
+    const searched = data.search_query && data.search_query !== data.sent_question
+      ? p("Searched UNSW's sources for your question and a broader version of it: ", el("q", { textContent: data.search_query }), ".")
+      : p("Searched UNSW's sources for your question.");
+    const found = data.retrieved.length
+      ? [p(data.decline_reason === "no_match"
+            ? "Search found these passages, but none was close enough in meaning to send to a model."
+            : `The model was given these ${data.retrieved.length} passages, at most ${PER_SOURCE} from any one source, in search order. The bar is each passage's similarity in meaning to your question; below ${MIN_SIMILARITY.toFixed(2)} for every passage, the service declines without asking a model.`),
+         passageList(data)]
+      : [p("Search found nothing.")];
+    const answered = [p(answerText(data))];
+    if (data.answer_safety && data.answered_by) answered.push(p(safetyText(data.answer_safety, "the answer")));
+    const time = [p(`${(ms / 1000).toFixed(1)} seconds from asking to answer.`)];
+    if (data.trace_id) time.push(p(`The trace ${data.trace_id} keeps each step's timing for 30 days, without your question or the answer.`));
+    howSteps.replaceChildren(
+      step(1, "Your question", sent, p(safetyText(data.question_safety, "it"))),
+      step(2, "Search", searched, ...found),
+      step(3, "Answer", ...answered),
+      step(4, "Time", ...time));
+    how.open = false;
+  };
+
+  const show = (data, question, ms) => {
     const numbers = new Set(data.sources.map((s) => s.number));
     showMasked(data.masked || []);
     showSafety(data.question_safety);
@@ -271,6 +441,7 @@
     if (current) compareButton.textContent = `Ask ${otherLabel[otherProvider(current.provider)]} instead`;
     compareStatus.textContent = "";
     other.hidden = true;
+    showHow(data, ms);
     sourcesList.replaceChildren(...data.sources.map((s) => renderSource(s)));
     sourcesBlock.hidden = data.sources.length === 0;
     result.hidden = false;
@@ -322,6 +493,7 @@
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (button.disabled) return;  // one question at a time
     const question = input.value.trim();
     if (!question) {
       status.textContent = "Type a question first.";
@@ -330,8 +502,9 @@
     }
     button.disabled = true;
     status.textContent = "Searching the policies…";
+    const started = performance.now();
     try {
-      show(await ask(question), question);
+      show(await ask(question), question, performance.now() - started);
       status.textContent = "Answer ready.";
     } catch (error) {
       status.textContent = error.message || "Something went wrong. Please try again.";
@@ -339,6 +512,14 @@
       button.disabled = false;
     }
   });
+
+  // An example question is asked straight away.
+  for (const chip of document.querySelectorAll("#examples button.chip")) {
+    chip.addEventListener("click", () => {
+      input.value = chip.textContent.trim();
+      form.requestSubmit();
+    });
+  }
 
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {

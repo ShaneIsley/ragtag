@@ -12,22 +12,27 @@ import openai
 from azure.core.exceptions import AzureError
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, StringConstraints
 
 from app import status, telemetry
-from app.answer import MAX_QUESTION_CHARS, AzureChat, Chat, Safety, answer
+from app.answer import MAX_QUESTION_CHARS, MIN_SIMILARITY, AzureChat, Chat, Safety, answer
 from app.embedding import AzureEmbedder
 from app.providers import PROVIDER_NAMES, BedrockChat, DownChat, FailoverChat, model_label
-from app.search import AzureRetriever, Retriever
+from app.search import PER_SOURCE, AzureRetriever, Retriever
 from app.settings import get_settings
 
 log = logging.getLogger("app")
 
 UNAVAILABLE = "The answer service is unavailable right now. Please try again in a minute."
+# Where the code, design and evaluation are published, for the pages' "How it's built".
+SOURCE_URL = "https://github.com/ShaneIsley/ragtag"
 
 templates = Jinja2Templates(directory=Path(__file__).with_name("templates"))
+# The black and white theme's typeface, served here so no other site sees the visitor.
+FONTS = Path(__file__).with_name("static") / "fonts"
+FONT_FILES = frozenset(path.name for path in FONTS.glob("*.woff2"))
 
 
 # No interactive API docs: they load scripts from a CDN, which the content security
@@ -48,7 +53,8 @@ def security_headers(nonce: str) -> dict[str, str]:
     return {
         "Content-Security-Policy": (
             f"default-src 'none'; script-src 'nonce-{nonce}'; style-src 'nonce-{nonce}'; "
-            "connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'self'; "
+            "connect-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; "
+            "form-action 'self'; "
             "frame-ancestors 'none'"
         ),
         "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
@@ -75,7 +81,11 @@ async def add_security_headers(
 ) -> Response:
     request.state.csp_nonce = secrets.token_urlsafe(16)
     response = await call_next(request)
-    response.headers.update(security_headers(request.state.csp_nonce))
+    headers = security_headers(request.state.csp_nonce)
+    # A response that sets its own caching keeps it (the fonts); everything else, none.
+    if "cache-control" in response.headers:
+        del headers["Cache-Control"]
+    response.headers.update(headers)
     return response
 
 
@@ -173,6 +183,8 @@ def rating(safety: Safety | None) -> Rating | None:
 class Retrieved(BaseModel):
     passage_id: str
     source_id: str
+    title: str = Field(description="The source's title, as the sources list shows it")
+    section: str = Field(description="The passage's heading path")
     similarity: float | None
 
 
@@ -222,7 +234,20 @@ def status_page(
             "snap": current.snapshot,
             "alarms": current.alarms,
             "trends": current.trends,
+            "source_url": SOURCE_URL,
         },
+    )
+
+
+@app.get("/fonts/{name}", include_in_schema=False)
+def font(name: str) -> FileResponse:
+    """The bundled typeface's files, and nothing else from the folder."""
+    if name not in FONT_FILES:
+        raise HTTPException(status_code=404)
+    return FileResponse(
+        FONTS / name,
+        media_type="font/woff2",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
     )
 
 
@@ -231,7 +256,13 @@ def page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"max_question_chars": MAX_QUESTION_CHARS, "nonce": request.state.csp_nonce},
+        {
+            "max_question_chars": MAX_QUESTION_CHARS,
+            "min_similarity": MIN_SIMILARITY,
+            "per_source": PER_SOURCE,
+            "source_url": SOURCE_URL,
+            "nonce": request.state.csp_nonce,
+        },
     )
 
 
@@ -287,7 +318,13 @@ def ask(
             for c in result.citations
         ],
         retrieved=[
-            Retrieved(passage_id=p.id, source_id=p.source_id, similarity=p.similarity)
+            Retrieved(
+                passage_id=p.id,
+                source_id=p.source_id,
+                title=p.title,
+                section=p.section,
+                similarity=p.similarity,
+            )
             for p in result.passages
         ],
         top_similarity=result.top_similarity,

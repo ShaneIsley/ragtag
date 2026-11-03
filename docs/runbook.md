@@ -130,7 +130,7 @@ The trace lists the passages the answer used. A passage that trips the filter (f
 
 ### policy-desk-eval-failed
 
-**Set off by** a scheduled run that failed the gate or judge calibration, or didn't finish within Lambda's 15 minutes.
+**Set off by** a scheduled run that failed the gate or judge calibration, or didn't finish within Lambda's 15 minutes; or a deploy's post-deploy check that couldn't start, because another run held the lock for 9 minutes.
 
 **Check** the run's record and log:
 ```
@@ -141,6 +141,10 @@ The gate's output says which:
 - `FAIL ... rule`: an answer broke a rule it hadn't broken before, such as a contradicted fact or forbidden text. The record's results (`runs/monitor/results/<id>.json.gz`) hold the answer.
 - `FAIL ... below its minimum`: a measure fell. Compare with `/status`'s trend.
 - Errors in every case: the app was down or unreachable; see the app's alarms.
+- `The post-deploy check couldn't start`: the release went out unchecked. Once the other run has finished, start the check by hand:
+  ```
+  aws lambda invoke --function-name policy-desk-eval --invocation-type Event --payload '{"suite":"canary","kind":"post-deploy"}' --cli-binary-format raw-in-base64-out /dev/null
+  ```
 - `TimeoutExpired`: the run didn't finish. A full run takes about 10 minutes; a slower one points at the app's latency or the model's rate limit.
 - `Calibration: FAILED`: a judge's agreement fell below its minimum. The judges' scores are suspect until it's explained; check the drift report for a new judge model version.
 

@@ -30,14 +30,44 @@
   dl.parts dt { font-weight: 600; margin-top: 1rem; }
   dl.parts dd { margin: 0.2rem 0 0; }
   dl.parts .asks { color: var(--muted); font-size: 0.9rem; }
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem; margin: 0 0 0.5rem; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.75rem; display: grid; gap: 0.15rem; align-content: start; }
+  .tile .k { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .tile .v { font-weight: 600; }
+  .tile .d { font-size: 0.85rem; color: var(--muted); }
+  .wide { overflow-x: auto; }
+  table.releases { min-width: 36rem; }
+  table.releases td.when { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.releases tr.stopped td { color: var(--muted); }
+  .pill { display: inline-block; font-size: 0.8rem; font-weight: 600; padding: 0 0.45rem; border-radius: 999px; border: 1px solid currentColor; }
 </style>
 </head>
 <body>
+<p class="banner" role="note">This site will be shut down at the end of November 2026.</p>
 <main>
   <p class="meta"><a href="/">Policy Desk</a></p>
   <h1>Service status</h1>
   <p class="lede">How Policy Desk is checked, and how it's doing. Test questions are asked of the live service every night and every week, and the results are recorded; this page shows the latest.{% if snap %} Updated {{ snap.generated }}, Sydney time.{% endif %}</p>
-  <p class="closing">This site will be shut down at the end of November 2026.</p>
+  {% if snap %}
+  {% set q = snap.quality %}
+  <section class="summary" aria-label="Summary">
+    <div class="tile"><span class="k">Service</span>
+      {% if alarms is none %}<span class="v">Alarms on the deployed site only</span>
+      {% elif not alarms %}<span class="v">Alarms not available</span>
+      {% else %}{% set raised = alarms | rejectattr("ok") | list %}
+        {% if raised %}<span class="v bad">{{ raised | length }} of {{ alarms | length }} alarms raised</span>{% else %}<span class="v ok">All {{ alarms | length }} alarms clear</span>{% endif %}
+      {% endif %}
+      <span class="d">Each alarm emails the operator</span></div>
+    <div class="tile"><span class="k">Answers</span>
+      {% if q.latest_full %}{% set f = q.latest_full %}
+        <span class="v {{ 'ok' if f.passed else 'bad' }}">Full check {{ 'passed' if f.passed else 'failed' }}</span>
+        <span class="d">{{ f.cases }} test questions, {{ f.day }}{% if f.warnings %}, {{ f.warnings }} known issue{{ 's' if f.warnings != 1 }} showing{% else %}, no warnings{% endif %}</span>
+      {% else %}<span class="v">No full check yet</span>{% endif %}</div>
+    <div class="tile"><span class="k">Known issues</span>
+      <span class="v">{{ snap.known_issues | length }}</span>
+      <span class="d">Shown as warnings until fixed</span></div>
+  </section>
+  {% endif %}
 
   <section aria-labelledby="now-heading">
     <h2 id="now-heading">Right now</h2>
@@ -63,7 +93,6 @@
   {% if not snap %}
     <p>The checks' results aren't available yet.</p>
   {% else %}
-  {% set q = snap.quality %}
   <section aria-labelledby="quality-heading">
     <h2 id="quality-heading">Answer quality</h2>
     {% if q.latest_full %}
@@ -98,6 +127,31 @@
       <p>No nightly check has run yet.</p>
     {% endif %}
   </section>
+
+  {% if snap.releases %}
+  <section aria-labelledby="releases-heading">
+    <h2 id="releases-heading">Releases</h2>
+    <p>Every change goes through the same pipeline. A change to how answers are made must pass the full check, run on the candidate before it goes out, and each release is checked again on the live service once it's out.</p>
+    <div class="wide">
+      <table class="releases">
+        <caption>Recent releases, most recent first. Times are Sydney time.</caption>
+        <thead><tr><th scope="col">Release</th><th scope="col">When</th><th scope="col">What changed</th><th scope="col">Before it went out</th><th scope="col">After</th></tr></thead>
+        <tbody>
+        {% for r in snap.releases %}
+          <tr{% if not r.released %} class="stopped"{% endif %}>
+            <td><code>{{ r.version }}</code></td>
+            <td class="when">{{ r.when }}</td>
+            <td>{{ r.note or "–" }}{% if r.answer_path_changed is not none %} <span class="meta">Answer path {{ 'changed' if r.answer_path_changed else 'unchanged' }}.</span>{% endif %}</td>
+            <td>{% if not r.gate %}{{ "Not needed: answer path unchanged" if r.answer_path_changed == false else "Not run" }}{% else %}{% for g in r.gate %}{% if g.passed %}<span class="ok">Passed</span>{% if not loop.first %} when run again{% endif %}{% else %}<span class="bad">Failed</span>: {{ g.failures }} of {{ g.cases }}, {{ g.failure }}{% endif %}{{ ". " if not loop.last }}{% endfor %}{% endif %}</td>
+            <td>{% if not r.released %}<span class="pill">Not released</span>{% else %}{{ r.after.what }} <span class="{{ 'ok' if r.after.passed else 'bad' }}">{{ 'passed' if r.after.passed else 'failed' }}</span>, {{ r.after.time }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="meta">A failed check stops a release. The fix, or a run again for a one-off, is recorded here too.</p>
+  </section>
+  {% endif %}
 
   <section aria-labelledby="judges-heading">
     <h2 id="judges-heading">Checking the checkers</h2>
@@ -194,6 +248,7 @@
 
   <footer>
     <p>Policy Desk is an independent demonstration, not a UNSW service. <a href="/">Ask a question</a>.</p>
+    <p><a href="{{ source_url }}">How it's built</a>: the source code, design, evaluation results and runbook.</p>
     {% include "_theme_switch.html" %}
   </footer>
 </main>

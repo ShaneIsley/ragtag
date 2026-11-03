@@ -165,6 +165,9 @@ jobs:
       - name: The evaluation gate, recorded as a release run
         run: |
           set -a; . "$RUNNER_TEMP/app.env"; set +a
+          # The publish's Release-Note trailer, for the status page's releases.
+          EVAL_NOTE="$(git log -1 --format='%(trailers:key=Release-Note,valueonly)')"
+          export EVAL_NOTE
           make eval EVAL_KIND=release
       - name: Keep the results
         if: always()
@@ -248,7 +251,10 @@ jobs:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           TAG: ${{ steps.tag.outputs.tag }}
       - name: Deploy, check /health, start the post-deploy canary
-        run: scripts/deploy.sh "$TAG" "$REGISTRY" "$SITE_URL"
+        run: |
+          RELEASE_NOTE="$(git log -1 --format='%(trailers:key=Release-Note,valueonly)')"
+          export RELEASE_NOTE
+          scripts/deploy.sh "$TAG" "$REGISTRY" "$SITE_URL"
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           TAG: ${{ steps.tag.outputs.tag }}

@@ -90,7 +90,7 @@ The scheduled jobs, and monitoring:
 
 | Component | Technology | Runs in | Job |
 |---|---|---|---|
-| Page | HTML, CSS and one script, served by the app | Browser | Ask, show the answer, its sources and the privacy notice. A theme switch (Auto, Light, Dark) on both pages, remembered in the browser only. No front-end build |
+| Page | HTML, CSS and one script, served by the app | Browser | Ask, from the question box or an example question, and show the answer, its sources, how it was made and the privacy notice, short first with the full text on request. A theme switch (Auto, Light, Dark) and a colour switch (slate and teal, or black and white for reading) on both pages, remembered in the browser only; every colour pairing meets WCAG 2.2 AA (`tests/test_app_contrast.py`). The black and white colours use Atkinson Hyperlegible, served by the app (`GET /fonts/…`). No front-end build |
 | Front door | Amazon CloudFront, default `*.cloudfront.net` certificate | AWS edge | HTTPS for visitors; signs every request to the app with origin access control |
 | App | FastAPI on AWS Lambda (container image, ARM64, 1 GB), behind the Lambda Web Adapter | Sydney | `GET /`, `GET /health`, `POST /ask` |
 | Ingest | Python on AWS Lambda (container image, ARM64, 2 GB, 15-minute limit) | Sydney | Fetch, convert, chunk, embed and index the sources weekly |
@@ -164,7 +164,7 @@ Prompts live in `prompts/*.yaml`, each with a `version`. The app reports the ver
 | Method and path | Does | Notes |
 |---|---|---|
 | `GET /` | The page | A fresh nonce per response for its one script and one stylesheet |
-| `GET /status` | The service status page | Alarm states now, and the latest snapshot the scheduled evaluation wrote: quality trends, calibration, the standby check, drift, known issues, use and the AI Assurance Framework's seven parts. Aggregates only. Server-rendered, with no script |
+| `GET /status` | The service status page | A summary first, then alarm states now, and the latest snapshot the scheduled evaluation wrote: quality trends, recent releases with their gate and post-deploy results, calibration, the standby check, drift, known issues, use and the AI Assurance Framework's seven parts. Aggregates only. Server-rendered; its only script is the theme switch |
 | `GET /health` | `{"status": "ok", "version": "<image tag>"}` | Lambda Web Adapter's readiness check; the evaluation records which version it measured |
 | `POST /ask` | Answers one question | Body `{"question": "...", "provider": "auto"}`; `provider` is `auto` (Azure, failing over to Bedrock), `azure` or `bedrock`. 422 for an empty or overlong question; 503 with a plain message if search fails, or both models do |
 | `GET /openapi.json` | The schema | The interactive docs pages are off, because they load scripts from a CDN |
@@ -172,7 +172,7 @@ Prompts live in `prompts/*.yaml`, each with a `version`. The app reports the ver
 A `POST /ask` response holds:
 - **The answer:** `question`, `answer`, `declined`, and `decline_reason` (`no_match`, `not_in_sources`, `no_citations`, `bad_citation`, `question_filtered` or `answer_filtered`).
 - **What it rests on:** `sources` (each cited passage with its number, title, section, publisher, URL, passage ID and text), and `retrieved` (every passage search returned, in rank order, with its similarity).
-- **How it was made:** `top_similarity`, `search_query`, `prompt_version`, `rewrite_version`, `model`, `input_tokens` and `output_tokens`; `provider`, `answered_by` and `failover_reason`, for which model answered and why; `sent_question` and `masked`, the question as the models saw it and what was removed; and `trace_id`.
+- **How it was made:** `retrieved` (every passage the model was given, in search order, with its source's title, its section and its similarity), `top_similarity`, `search_query`, `prompt_version`, `rewrite_version`, `model`, `input_tokens` and `output_tokens`; `provider`, `answered_by` and `failover_reason`, for which model answered and why; `sent_question` and `masked`, the question as the models saw it and what was removed; and `trace_id`.
 - **Content safety:** `question_safety` and `answer_safety`, Azure's ratings (safe, low, medium or high for hate, sexual, violence and self-harm; a jailbreak check for the question; whether it was blocked), with `flags` naming anything above safe. The page shows the question's flags above the answer.
 
 The same fields, apart from text, are on each answer's OpenTelemetry spans (section 4.10), and `trace_id` finds them.
@@ -244,8 +244,8 @@ The only wildcards are actions AWS can't limit to a resource: X-Ray trace and sp
 **Other controls:**
 - **Secrets.** The functions hold only the secrets' ARNs and read the values at start-up with their own role. No key is in code, in an image, in GitHub or in a function's configuration.
 - **Response headers.**
-  - A content security policy with a per-request nonce (`default-src 'none'`, `frame-ancestors 'none'`).
-  - HSTS, `nosniff`, `X-Frame-Options: DENY`, a referrer policy, a permissions policy and `Cache-Control: no-store`.
+  - A content security policy with a per-request nonce (`default-src 'none'`, `frame-ancestors 'none'`). Fonts only from the app itself (`font-src 'self'`), so no other site sees a visitor.
+  - HSTS, `nosniff`, `X-Frame-Options: DENY`, a referrer policy, a permissions policy and `Cache-Control: no-store`, except the font files, which are cached for a year.
 - **Images.**
   - Non-root users.
   - Only what each job runs: the app image doesn't contain the ingest job's converters.
@@ -285,7 +285,7 @@ The page's "How your question is handled" section says the same in plain words. 
 
 - **Two stages.** With `image_tag` empty, Terraform builds the Azure services and the AWS pieces that cost nothing, which is enough to run everything locally. Setting `image_tag` adds the functions, CloudFront, the schedule, the alarms and the dashboard.
 - **Locally.** `podman compose up` runs the app image against the real Azure services, on port 8001. `podman compose --profile ingest run --rm ingest` runs the ingest image.
-- **The pipeline.** GitHub Actions (`.github/workflows/ci.yml`) checks every push and pull request: lint, types, tests, Terraform validation, and on pull requests the three images built and scanned. On main, a change to the answer files runs the evaluation gate against the candidate image, recorded as a release run; then, only if it passed, the images are built, scanned, pushed and deployed by `scripts/deploy.sh`, which checks `/health` and starts a post-deploy canary. AWS access is by OIDC, from main only. GitHub gets a copy of this repository without its history (`scripts/publish-github.sh`).
+- **The pipeline.** GitHub Actions (`.github/workflows/ci.yml`) checks every push and pull request: lint, types, tests, Terraform validation, and on pull requests the three images built and scanned. On main, a change to the answer files runs the evaluation gate against the candidate image, recorded as a release run; then, only if it passed, the images are built, scanned, pushed and deployed by `scripts/deploy.sh`, which checks `/health` and starts a post-deploy canary. If another run holds the evaluation's lock, the canary waits up to 9 minutes for it, then fails loudly rather than leaving a release unchecked. A publish may carry a one-line note (`PUBLISH_NOTE`), which goes into the gate's and the canary's records for the status page's releases. AWS access is by OIDC, from main only. GitHub gets a copy of this repository without its history (`scripts/publish-github.sh`).
 - **The release check.** `make release`, the way to deploy by hand, builds nothing until a passing full release run has tested the answer files: the app, the prompts, the index definition, the app's Dockerfile and the app image's dependencies, hashed into a fingerprint (`evals/records.py`). A change to documentation, tests or the evaluation itself needs no new run. `RELEASE_OVERRIDE="why"` skips the check and records the reason.
 - **Deploying.** Terraform sets each function's image only when it creates it; after that the pipeline or `make release` deploys, through the same script, so an apply never puts an older image back. The image carries its own version, which `/health` reports.
 - **Rollback.** `scripts/deploy.sh` with an earlier release's tag ([runbook](runbook.md)). ECR keeps the last 10 images of each, and tags can't be overwritten.
@@ -357,7 +357,7 @@ A record holds the commit, the answer files' fingerprint, the version `/health` 
 
 The evaluation's own requests are left out of the question mix: they send `x-policy-desk-run`, and their spans carry `app.synthetic` (section 4.10). Golden questions outnumber visitors' many times, so without that the mix would measure the golden set. The first week with at least 20 visitors' questions becomes the baseline (`drift/baseline.json`; delete it to start a new one); until then the report says there are too few to compare. The report goes to `drift/latest.json`, for the status page, and the count of signals to act on to the `DriftSignals` metric, whose alarm emails. Drift makes no model calls, so it runs without the lock.
 
-**The status page.** After every scheduled run, passed or not, the eval function rebuilds `status/snapshot.json` (`evals/status.py`) from the production and calibration records, the drift report, the golden set, `thresholds.yaml`, and counts of visitors' questions from the spans. Visitors' counts from 1 to 4 become "fewer than 5" before the snapshot is written, so a small count never leaves the function. `GET /status` shows it, with the alarms' states read live, each cached briefly (5 minutes and 1 minute). For each of the AI Assurance Framework's seven parts, the page gives what's measured now: questions answered, details removed, the latest run's facts and groundedness, injection cases resisted, test cases by audience, sources cited, the standby check and the judges' agreement.
+**The status page.** After every scheduled run, passed or not, the eval function rebuilds `status/snapshot.json` (`evals/status.py`) from the production, release and calibration records, the drift report, the golden set, `thresholds.yaml`, and counts of visitors' questions from the spans. Visitors' counts from 1 to 4 become "fewer than 5" before the snapshot is written, so a small count never leaves the function. `GET /status` shows it, with the alarms' states read live, each cached briefly (5 minutes and 1 minute). The releases list groups the records by the version each tested: the gate's runs on the candidate, then the first check on production, with each release's note and whether its answer files changed from the version before. A version the gate stopped shows as not released. For each of the AI Assurance Framework's seven parts, the page gives what's measured now: questions answered, details removed, the latest run's facts and groundedness, injection cases resisted, test cases by audience, sources cited, the standby check and the judges' agreement.
 
 ### 4.12 Failure modes
 

@@ -49,6 +49,11 @@ PROMPTFOO_TIMEOUT_S = 840
 LOCK_KEY = "lock/eval-running.json"
 # A lock older than Lambda's limit belongs to a run that died without releasing it.
 LOCK_STALE_S = 16 * 60
+# A deploy's check waits this long for another run to finish, then fails loudly: skipped,
+# the release would go unchecked (3 Nov 2026, behind a full run started a minute earlier).
+# A canary takes about 4 minutes, so this leaves it room within Lambda's 15.
+LOCK_WAIT_S = 9 * 60
+LOCK_POLL_S = 30
 
 
 class GateFailed(Exception):
@@ -97,9 +102,19 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     bucket = os.environ.get("EVAL_RECORDS_BUCKET")
     client = s3() if bucket else None
     if client and bucket and not take_lock(client, bucket, suite):
-        return {"suite": suite, "skipped": "another run is in progress"}
+        if kind != "post-deploy":
+            return {"suite": suite, "skipped": "another run is in progress"}
+        waited = 0
+        while not take_lock(client, bucket, suite):
+            if waited >= LOCK_WAIT_S:
+                raise GateFailed(
+                    f"The post-deploy check couldn't start: another run held the lock for "
+                    f"{LOCK_WAIT_S // 60} minutes."
+                )
+            time.sleep(LOCK_POLL_S)
+            waited += LOCK_POLL_S
     try:
-        return calibrate() if suite == CALIBRATION else run(suite, kind)
+        return calibrate() if suite == CALIBRATION else run(suite, kind, event.get("note"))
     finally:
         if client and bucket:
             client.delete_object(Bucket=bucket, Key=LOCK_KEY)
@@ -122,7 +137,7 @@ def calibrate() -> dict[str, Any]:
     return {"suite": CALIBRATION, "passed": True}
 
 
-def run(suite: str, kind: str = "monitor") -> dict[str, Any]:
+def run(suite: str, kind: str = "monitor", note: str | None = None) -> dict[str, Any]:
     os.environ.update(
         {
             "EVAL_SUITE": suite,
@@ -141,6 +156,8 @@ def run(suite: str, kind: str = "monitor") -> dict[str, Any]:
     )
     if not RESULTS.exists():
         raise GateFailed(f"promptfoo wrote no results for the {suite} run")
-    if gate.main([str(RESULTS), "--kind", kind, "--suite", suite]) != 0:
+    # A deploy's check carries the release's note, for the status page's releases.
+    argv = [str(RESULTS), "--kind", kind, "--suite", suite, *(["--note", note] if note else [])]
+    if gate.main(argv) != 0:
         raise GateFailed(f"The {suite} run failed the gate: see this log and the run's record.")
     return {"suite": suite, "passed": True}

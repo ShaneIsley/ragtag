@@ -57,7 +57,7 @@ The data-flow diagram in [`design.md`](design.md#48-data-and-privacy), section 4
 |---|---|
 | Collect only for a lawful purpose, and only what's reasonably necessary (s 8) | The service needs no personal information, and the page asks people not to enter any. No IP addresses are recorded. **Meets** |
 | Collect from the person, and tell them what will happen to it (ss 9–10) | The page's "How your question is handled" section says who runs the service, where questions go, what's kept and what to leave out, and it sits next to the question box. **Meets** |
-| Collection relevant, not excessive or intrusive (s 11) | One question at a time, capped at 500 characters. No accounts, cookies or tracking. A light or dark theme choice is kept in the visitor's own browser and never sent. **Meets** |
+| Collection relevant, not excessive or intrusive (s 11) | One question at a time, capped at 500 characters. No accounts, cookies or tracking. A theme and colour choice is kept in the visitor's own browser and never sent. The black and white colours' typeface is served by this service, not a font host, so choosing it tells no one else. **Meets** |
 | Store securely, keep no longer than needed (s 12) | Questions and answers aren't stored. Logs are encrypted, kept for 30 days, and readable only by the AWS account's administrators. **Meets** |
 | Access, correction and accuracy (ss 13–16) | Nothing is kept that's linked to a person. Answers are about UNSW's rules, not about people. **Not applicable** |
 | Use only for the purpose collected (s 17) | A question is used only to answer it. **Meets** |

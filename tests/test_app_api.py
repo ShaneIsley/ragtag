@@ -4,7 +4,7 @@ import openai
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app, get_chat, get_retriever
+from app.main import SOURCE_URL, app, get_chat, get_retriever
 from tests.fakes import FakeChat, FakeRetriever, passage
 
 
@@ -39,11 +39,41 @@ def test_page_tells_people_where_their_question_goes(client: TestClient) -> None
     assert 'id="privacy"' in html
     assert "outside the OECD" in html
     assert "privacy impact assessment" in html
-    assert "<h3>Rules on where information goes</h3>" in html
+    # Short first, the full text a click away.
+    assert "<h3>The rules it follows</h3>" in html
+    assert "<summary>More about where it goes</summary>" in html
 
 
-def test_page_says_when_the_site_closes(client: TestClient) -> None:
-    assert "shut down at the end of November 2026" in client.get("/").text
+def test_page_says_when_the_site_closes_before_anything_else(client: TestClient) -> None:
+    html = client.get("/").text
+    assert "shut down at the end of November 2026" in html
+    assert html.index('class="banner"') < html.index("<main>")
+
+
+def test_example_questions_are_buttons_including_one_to_decline(client: TestClient) -> None:
+    html = client.get("/").text
+    assert 'id="examples"' in html
+    assert html.count('<button type="button" class="chip') == 8
+    assert "University of Sydney" in html
+
+
+def test_page_has_the_how_it_was_made_panel_and_the_source_link(client: TestClient) -> None:
+    html = client.get("/").text
+    assert '<details class="how" id="how">' in html
+    assert "const MIN_SIMILARITY = 0.4;" in html and "const PER_SOURCE = 4;" in html
+    assert f'href="{SOURCE_URL}"' in html
+
+
+def test_the_reading_typeface_is_served_with_a_long_cache(client: TestClient) -> None:
+    font = client.get("/fonts/AtkinsonHyperlegible-Regular.woff2")
+    assert font.status_code == 200
+    assert font.headers["content-type"] == "font/woff2"
+    assert "immutable" in font.headers["cache-control"]
+    assert font.content[:4] == b"wOF2"
+    # Only the fonts themselves, and pages still aren't cached.
+    assert client.get("/fonts/OFL.txt").status_code == 404
+    assert client.get("/fonts/..%2Fmain.py").status_code == 404
+    assert client.get("/").headers["cache-control"] == "no-store"
 
 
 def test_ask_returns_the_answer_with_its_sources(client: TestClient) -> None:
@@ -55,6 +85,8 @@ def test_ask_returns_the_answer_with_its_sources(client: TestClient) -> None:
     assert [s["number"] for s in body["sources"]] == [2]
     assert body["sources"][0]["url"].startswith("https://www.digital.gov.au/")
     assert len(body["retrieved"]) == 2
+    # The panel names each passage the model was given.
+    assert {"title", "section"} <= set(body["retrieved"][0])
     assert body["prompt_version"] == "answer.v4"
 
 
@@ -90,6 +122,7 @@ def test_security_headers_and_a_fresh_nonce_per_page(client: TestClient) -> None
     assert f'<style nonce="{nonce}">' in first.text
     assert nonce not in second.headers["content-security-policy"]
     assert "default-src 'none'" in csp and "frame-ancestors 'none'" in csp
+    assert "font-src 'self'" in csp
     assert first.headers["x-content-type-options"] == "nosniff"
     assert first.headers["strict-transport-security"].startswith("max-age=")
 

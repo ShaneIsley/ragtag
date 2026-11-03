@@ -245,9 +245,10 @@ resource "aws_lambda_function_event_invoke_config" "eval" {
 # The drift checks at 5 read what all of them recorded.
 
 locals {
-  # What the drift checks read: the production runs, calibration, and the ingest's
-  # records of what it changed.
-  drift_reads = ["runs/monitor/", "runs/post-deploy/", "runs/calibration/", "ingest/"]
+  # What the drift checks and the status page read: the production runs, calibration,
+  # the gate's release runs (for the releases list) and the ingest's records of what it
+  # changed.
+  drift_reads = ["runs/monitor/", "runs/post-deploy/", "runs/calibration/", "runs/release/", "ingest/"]
 
   eval_schedules = {
     calibration = "cron(15 2 * * ? *)"

@@ -15,7 +15,8 @@ Ask: **"Is ChatGPT approved for use at UNSW?"**
 Point out:
 - **The answer comes first,** then the details, with every statement cited. Open a source: it's UNSW's own passage, with a link to the page.
 - **Rule or guidance:** the answer says which points are requirements and which are advice. The two UNSW pages appear to conflict, and the answer separates ChatGPT Edu from free ChatGPT and cites both.
-- **How it was made,** under the answer: which model wrote it, and the trace ID. Every step of that answer can be found from the ID (the search, the passages, the prompt versions, the time each step took), and no trace holds the question's text.
+- **How this answer was made,** under the answer: open it. The question as sent, the broader question searched, every passage the model was given with its similarity and which it cited, the model and prompt, and the time. The trace ID finds every step again later, and no trace holds the question's text.
+- **The example questions** below the box ask themselves: a quick way to show staff, student and researcher answers, and the decline.
 
 ## 2. What it won't do (1 minute)
 

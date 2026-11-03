@@ -1,27 +1,37 @@
-{# The theme switch: Auto follows the device. Hidden without script, where it couldn't work.
-   The choice stays in this browser and is sent nowhere. #}
+{# The theme and colour switches: Auto follows the device; black and white is for
+   reading. Hidden without script, where they couldn't work. The choices stay in this
+   browser and are sent nowhere. #}
 <fieldset class="theme" id="theme" hidden>
   <legend>Theme</legend>
   <label><input type="radio" name="theme" value="auto"> Auto</label>
   <label><input type="radio" name="theme" value="light"> Light</label>
   <label><input type="radio" name="theme" value="dark"> Dark</label>
 </fieldset>
+<fieldset class="theme" id="palette" hidden>
+  <legend>Colours</legend>
+  <label><input type="radio" name="palette" value="standard"> Standard</label>
+  <label><input type="radio" name="palette" value="reading"> Black and white</label>
+</fieldset>
 <script nonce="{{ nonce }}">
 (() => {
   const root = document.documentElement;
-  let saved = "auto";
-  try { saved = localStorage.getItem("theme") || "auto"; } catch (e) { /* follow the device */ }
-  for (const radio of document.querySelectorAll('#theme input[name="theme"]')) {
-    radio.checked = radio.value === saved;
-    radio.addEventListener("change", () => {
-      try {
-        if (radio.value === "auto") localStorage.removeItem("theme");
-        else localStorage.setItem("theme", radio.value);
-      } catch (e) { /* the choice lasts for this page only */ }
-      if (radio.value === "auto") delete root.dataset.theme;
-      else root.dataset.theme = radio.value;
-    });
+  // Each switch: its storage key, the value that means "nothing saved", and the
+  // root attribute it sets.
+  for (const [key, plain, attribute] of [["theme", "auto", "theme"], ["palette", "standard", "palette"]]) {
+    let saved = plain;
+    try { saved = localStorage.getItem(key) || plain; } catch (e) { /* the default */ }
+    for (const radio of document.querySelectorAll(`#${key} input[name="${key}"]`)) {
+      radio.checked = radio.value === saved;
+      radio.addEventListener("change", () => {
+        try {
+          if (radio.value === plain) localStorage.removeItem(key);
+          else localStorage.setItem(key, radio.value);
+        } catch (e) { /* the choice lasts for this page only */ }
+        if (radio.value === plain) delete root.dataset[attribute];
+        else root.dataset[attribute] = radio.value;
+      });
+    }
+    document.getElementById(key).hidden = false;
   }
-  document.getElementById("theme").hidden = false;
 })();
 </script>

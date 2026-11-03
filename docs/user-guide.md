@@ -25,7 +25,8 @@ Each question is answered on its own: follow-up questions that rely on an earlie
 - **The first sentence answers the question.** The details follow.
 - **Numbers in brackets, like [2], are citations.** Each points to a passage in the **Sources** list below the answer. Open a source to read the passage itself and follow the link to UNSW's page.
 - **Rule or guidance.** Answers say whether a point is something you must do (a rule) or something UNSW recommends (guidance), and whom it applies to.
-- **How it was made.** Under the answer: which model wrote it, and a trace ID, which the operator can use to look into a wrong answer.
+- **How this answer was made.** Under the answer, closed until you open it: the question as it was sent (with anything removed), the broader question it searched for, every passage the model was given with how close each was to your question and which it cited, the model and prompt, and how long it took. The trace ID lets the operator look into a wrong answer.
+- **Example questions,** below the question box, ask themselves when you choose one: some for staff, students and researchers, and one about another university that it should decline.
 - **A content safety note** above the answer means Microsoft's filter rated your question as possibly harmful. It's shown so you know; it doesn't mean you did anything wrong.
 
 **Check the source before you rely on an answer,** especially for anything with consequences: an answer can leave out a condition, and a few questions sometimes get a wrong detail (the service's status page lists them). For your course's rules, your course outline and convenor have the final word.
@@ -49,9 +50,9 @@ It declines instead of guessing, and says why:
 
 Your question isn't stored, and refreshing the page clears it. Your IP address isn't recorded. The answer model may process your question outside Australia, which is why personal details are removed and why you should leave them out. The page's "How your question is handled" section has the detail.
 
-## Light or dark
+## Light or dark, and black and white
 
-The page follows your device's light or dark setting. To choose one yourself, use **Theme** at the bottom of the page: Auto, Light or Dark. Your browser remembers the choice; it isn't sent anywhere.
+The page follows your device's light or dark setting. To choose one yourself, use **Theme** at the bottom of the page: Auto, Light or Dark. **Colours** offers black and white for reading: higher contrast, a typeface designed to keep similar letters apart, slightly larger text, and every link underlined. Your browser remembers both choices; they aren't sent anywhere.
 
 ## How it's checked
 

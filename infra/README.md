@@ -112,7 +112,7 @@ AWS access is by OIDC, so no AWS keys are stored in GitHub, and the sign-in step
 
    `APP_ENV` holds the gate's settings: endpoints, names and secret ARNs, no secrets. (With the GitHub CLI, `gh secret set <name> --repo ShaneIsley/ragtag --body "<value>"` does the same.)
 
-**Publishing:** the forge repository is the source. `scripts/publish-github.sh` copies, over SSH with your GitHub key, a commit's files for running, deploying, using and understanding the service to GitHub, without the forge's history (no prototype, working notes or the script itself), as one "Snapshot of <commit>" commit, which starts the pipeline. Run it with `PUBLISH_PUSH=1` to push.
+**Publishing:** the forge repository is the source. `scripts/publish-github.sh` copies, over SSH with your GitHub key, a commit's files for running, deploying, using and understanding the service to GitHub, without the forge's history (no prototype, working notes or the script itself), as one "Snapshot of <commit>" commit, which starts the pipeline. Run it with `PUBLISH_PUSH=1` to push. `PUBLISH_NOTE="…"` adds a one-line note on what the release changes, as a `Release-Note:` trailer: the gate's record and the post-deploy check's carry it, and the status page lists it with the release.
 
 **Rolling back:** deploy an earlier release's images, which ECR keeps (the last 10): `scripts/deploy.sh <tag> <registry> "$(terraform -chdir=infra output -raw app_url)"`, where the registry is the part of `ecr_app_repository` before the first `/`.
 
