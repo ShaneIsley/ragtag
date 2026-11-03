@@ -129,3 +129,16 @@ def test_a_short_whole_answer_is_kept(source: Source) -> None:
     assert [c.content for c in chunk_markdown(source, doc)] == [
         "The report is only visible to teachers."
     ]
+
+
+def test_the_introduction_repeats_the_main_sections_outlines(source: Source) -> None:
+    # A section's own outline seldom ranks; the page's introduction does.
+    doc = (
+        "# AI Assurance Framework\n\n## What is the AI Assurance Framework?\n\n"
+        "Each of the 7 parts of the framework should be used to guide decision making.\n\n"
+        + FRAMEWORK.split("\n\n", 1)[1]
+    )
+    intro = [c.content for c in chunk_markdown(source, doc) if c.section.endswith("Framework?")]
+    assert any(
+        f"“What factors should you consider?” covers: {'; '.join(PARTS)}." in text for text in intro
+    )

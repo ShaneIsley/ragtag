@@ -39,6 +39,8 @@ INLINE_TAGS = ["i", "em", "b", "strong", "u", "span"]
 HEADINGS = re.compile(r"^h[1-6]$")
 # UNSW's cards: each is a title heading with its own content, which may have subheadings.
 CARD_SELECTOR = ".grid-accordion-item"
+# UNSW's tabs: a list of labels, then the panels in the same order.
+TABS_SELECTOR = ".cmp-tabs"
 
 _markitdown = MarkItDown()
 
@@ -262,11 +264,48 @@ def nest_accordions(soup: BeautifulSoup, main: Tag) -> None:
         panel_top[controls] = min(levels, default=level + 1)
 
 
+def label_tabs(soup: BeautifulSoup, main: Tag) -> None:
+    """Puts each tab's label over its panel as a heading, and drops the list of tabs.
+
+    UNSW's tabs list their labels, then their panels in the same order, with nothing
+    else linking the two. Without the labels, the AI referencing page's four tables of
+    formats lost their styles: each table's "See all … referencing guides" line ended a
+    passage and began the next, so the Chicago format read as APA's. A panel that
+    starts with a heading of its own keeps it instead.
+    """
+    in_panels = {str(b.get("aria-controls")) for b in main.select("button[aria-controls]")}
+    for tabs in main.select(TABS_SELECTOR):
+        labels = list(
+            dict.fromkeys(" ".join(tab.get_text(" ").split()) for tab in tabs.select("[role=tab]"))
+        )
+        panels = tabs.select("[role=tabpanel]")
+        if not labels or len(labels) != len(panels):
+            continue
+        # The heading the tabs sit under, not one inside an accordion's panel.
+        above = next(
+            (
+                h
+                for h in tabs.find_all_previous(HEADINGS)
+                if not any(str(p["id"]) in in_panels for p in h.find_parents(id=True))
+            ),
+            None,
+        )
+        level = min(_level(above) + 1, 6) if above else 2
+        for label, panel in zip(labels, panels, strict=True):
+            if not panel.find(HEADINGS):
+                heading = soup.new_tag(f"h{level}")
+                heading.string = label
+                panel.insert(0, heading)
+        for tablist in tabs.select("[role=tablist]"):
+            tablist.decompose()
+
+
 def main_content(html: bytes) -> str:
     """The page's main content as HTML, without navigation, scripts or images."""
     soup = BeautifulSoup(html, "html.parser")
     main = next((m for sel in MAIN_SELECTORS if (m := soup.select_one(sel))), soup)
     # Before buttons go with the other page furniture.
+    label_tabs(soup, main)
     nest_accordions(soup, main)
     for tag in main.find_all(NOISE_TAGS):
         tag.decompose()

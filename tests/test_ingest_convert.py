@@ -89,6 +89,26 @@ def test_a_panels_headings_stay_inside_its_question() -> None:
     assert "In this transitional period, the framework below applies." in md
 
 
+def test_each_tabs_label_heads_its_panel() -> None:
+    # Unlabelled, the Chicago format read as APA's (the label line ended the passage before).
+    page = b"""<main><h3>Examples of AI referencing</h3><div class="cmp-tabs">
+    <ul role="tablist"><li role="tab"><span>Harvard (UNSW)</span></li>
+      <li role="tab"><button class="accordion-item">Harvard (UNSW)</button></li>
+      <li role="tab"><span>APA (7th edition)</span></li>
+      <li role="tab"><button class="accordion-item">APA (7th edition)</button></li></ul>
+    <div role="tabpanel"><p>Company. Year, Product Name.</p></div>
+    <div role="tabpanel"><p>Company. (Year). Tool (Month Date version) [Large language model].</p>
+      </div></div></main>"""
+    md = clean_markdown(html_to_markdown(page))
+    assert md.split("\n\n") == [
+        "### Examples of AI referencing",
+        "#### Harvard (UNSW)",
+        "Company. Year, Product Name.",
+        "#### APA (7th edition)",
+        "Company. (Year). Tool (Month Date version) [Large language model].\n",
+    ]
+
+
 def test_html_to_markdown_keeps_headings_and_text() -> None:
     md = clean_markdown(html_to_markdown(PAGE))
     assert "# Guidance on AI products" in md

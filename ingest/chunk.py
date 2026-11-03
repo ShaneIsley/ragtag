@@ -56,13 +56,27 @@ def content_hash(source: Source, section: str, content: str) -> str:
     return hashlib.sha256("\x1f".join(fields).encode("utf-8")).hexdigest()
 
 
+def _outline(names: list[str]) -> str | None:
+    """The line naming a section's subsections, or None if it shouldn't have one."""
+    line = f"{'; '.join(names).rstrip('.')}."
+    questions = sum(name.endswith("?") for name in names)
+    if len(names) < OUTLINE_MIN or questions * 2 > len(names) or len(line) > CHUNK_CHARS:
+        return None
+    return line
+
+
 def add_outlines(markdown: str) -> str:
-    """Names each section's subsections at its start, when it has OUTLINE_MIN or more.
+    """Names each section's subsections at its start, when it has OUTLINE_MIN or more,
+    and repeats the main sections' outlines at the end of the page's introduction.
 
     Search sends at most 4 passages from one source, so an answer about a section with
     seven parts saw two of them and guessed the rest (docs/evaluation.md). The line names
-    them all, in the page's own words. Left out, because they'd match questions they
-    don't answer, as the sections in SKIP_SECTIONS do: the top heading (a whole page's
+    them all, in the page's own words. A section's own outline seldom ranks, though:
+    asked what the AI Assurance Framework asks people to consider, search ranked the
+    page's introduction first and the outline below 30th. So the introduction (its
+    first section with text) carries the outlines of the sections under the page's top
+    heading too. Left out, because they'd match questions they don't answer, as the
+    sections in SKIP_SECTIONS do: the top heading's own outline (a whole page's
     contents), a list of questions (an FAQ's, which repeats a visitor's question word for
     word but holds none of its answer), and a line too long for one passage.
     """
@@ -74,27 +88,45 @@ def add_outlines(markdown: str) -> str:
     ]
     top = min((level for _, level, _ in headings), default=0)
     levels = {i: level for i, level, _ in headings}
+    titles = {i: title for i, _, title in headings}
     subsections: dict[int, list[str]] = {}
+    parent: dict[int, int | None] = {}
     parents: list[int] = []  # line numbers of the headings above this one
     for i, level, title in headings:
         while parents and levels[parents[-1]] >= level:
             parents.pop()
+        parent[i] = parents[-1] if parents else None
         if parents:
             subsections.setdefault(parents[-1], []).append(title)
         parents.append(i)
+    outlines = {
+        i: line for i in levels if levels[i] > top and (line := _outline(subsections.get(i, [])))
+    }
+    # The introduction: the first section below the top heading with text of its own.
+    starts = sorted(levels)
+    ends = dict(zip(starts, [*starts[1:], len(lines)], strict=True))
+    intro = next(
+        (
+            i
+            for i in starts
+            if levels[i] > top and len(" ".join(lines[i + 1 : ends[i]]).strip()) >= MIN_CHARS
+        ),
+        None,
+    )
+    main = [
+        f"“{titles[i]}” covers: {line}"
+        for i, line in outlines.items()
+        if i != intro and (p := parent[i]) is not None and levels[p] == top
+    ]
     out = []
     for i, line in enumerate(lines):
+        if intro is not None and main and i == ends[intro]:
+            out += ["", *main, ""]
         out.append(line)
-        names = subsections.get(i, [])
-        outline = f"{OUTLINE_PREFIX}{'; '.join(names).rstrip('.')}."
-        questions = sum(name.endswith("?") for name in names)
-        if (
-            len(names) >= OUTLINE_MIN
-            and levels[i] > top
-            and questions * 2 <= len(names)
-            and len(outline) <= CHUNK_CHARS
-        ):
-            out += ["", outline, ""]
+        if i in outlines:
+            out += ["", OUTLINE_PREFIX + outlines[i], ""]
+    if intro is not None and main and ends[intro] == len(lines):
+        out += ["", *main]
     return "\n".join(out) + "\n"
 
 
