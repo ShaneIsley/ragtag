@@ -511,3 +511,20 @@ Searched live for `assurance-framework-parts`, the AI Assurance Framework page's
 ### The referencing styles' tabs (3 November 2026)
 
 `phone-number-apa` had been a known issue since runs 5 and 8 ("gives the Harvard format for an APA question"), and in every run since 17 its answer gave "OpenAI's ChatGPT AI language model, response to question from author, 7 February, 2023" as the APA example. `reference-chatgpt-harvard`, the other known issue on the same page, gave the APA format for a Harvard question. Both had one cause in the conversion. The AI referencing page shows its formats in tabs (Harvard, APA, Chicago, Other) whose labels and panels are linked only by their order, and the labels were lost. Each panel ends with "See all … referencing guides", so after chunking "See all APA (7th ed.) referencing guides" sat at the top of the passage holding the Chicago table, and the model took Chicago's format for APA's. Each tab's label now heads its panel, so each style's table is a passage of its own under "Examples of AI referencing > APA (7th edition)" and so on. Both known issues stay listed until a run shows them fixed.
+
+## Run 20: the full run after both fixes (3 November 2026)
+
+The outline and tab fixes were re-ingested (419 passages: 19 added, 400 unchanged, 10 removed) and deployed (`467f3ff`; ingest code only, so no gate), and the full suite was run on production. It passed with no failures and, for the first time, no warnings:
+
+| Measure | Run 18 | Run 20 | Minimum |
+|---|---|---|---|
+| `facts` | 0.756 | 0.828 | 0.68 |
+| `groundedness` | 0.980 | 0.973 | 0.95 |
+| `relevance` | 0.991 | 1.000 | 0.97 |
+| `recall` | 0.894 | 0.872 | 0.87 |
+| `cites_expected` | 0.967 | 0.967 | 0.94 |
+| Latency, 90th percentile | 9.2 s | 7.8 s | 9.9 s |
+
+- **`assurance-framework-parts` stated both facts.** The answer lists the seven parts in the page's words, "Business value; Sensitive data; Harm; Fairness; Transparency & accountability; Resilience & safety; Compliance", citing the introduction's outline passage. Searched live, that passage now ranks 5th, the fourth from the page, where the section's own outline wasn't in the top 30.
+- **`phone-number-apa` stated its fact**, giving APA's format from the passage under "APA (7th edition)". **`reference-chatgpt-harvard`** gave the Harvard format and contradicted nothing. Both are off the known issues list; the two left are `deepseek-restricted` and `unauthorised-ai-penalties`.
+- **Recall fell to 0.872, from one case.** `who-decides-ai-use` found one of its three expected sources, not all three. The rewrite model worded its question differently this time ("… in an assessment at UNSW?" for "… use AI tools in an assessment?"). Searched live with each wording, the new index finds all three sources with the earlier one and one with this one, so the drop is the rewrite's variation, not the new passages. Recall now sits just above its minimum; the next weekly full runs show whether that's this one draw.
