@@ -24,7 +24,7 @@ log = logging.getLogger("app")
 # those. Phase 2 sets the value from the evaluation baseline.
 MIN_SIMILARITY = 0.40
 # The prompt versions the app uses (prompts/*.yaml).
-ANSWER_PROMPT = "answer.v4"
+ANSWER_PROMPT = "answer.v5"
 REWRITE_PROMPT = "rewrite.v2"
 NO_ANSWER = "NO_ANSWER"
 MAX_QUESTION_CHARS = 500

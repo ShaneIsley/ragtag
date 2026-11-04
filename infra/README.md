@@ -88,7 +88,9 @@ The evaluation image's repository has to exist before `make release` can push to
 
 ## CI and deployment
 
-GitHub Actions runs the pipeline in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), on a copy of this repository published to GitHub:
+GitHub Actions runs the pipeline in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), on a copy of this repository published to GitHub. It delivers code, not infrastructure: Terraform changes are applied by a person, after reading the plan, from the machine that holds the state. The state is local and holds API keys; an apply needs admin rights in both clouds, which a public repository's pipeline shouldn't hold; and a plan prints ARNs, the account number and URLs, which this repository's public logs and artifacts would show. Terraform ignores the functions' images after creating them, so a deploy and an apply can't undo each other (`docs/decisions.md`, "Infrastructure changes").
+
+What runs, and when:
 
 | When | What runs |
 |---|---|

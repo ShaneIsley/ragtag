@@ -24,7 +24,7 @@ Policy Desk answers questions from UNSW staff, students and researchers about ho
 
 | Part | What | Settings |
 |---|---|---|
-| Answer model | Azure OpenAI `gpt-5-mini`, version 2025-08-07, a GlobalStandard deployment | Low reasoning, at most 2,000 output tokens, prompt `answer.v4`. Upgraded only when the version retires |
+| Answer model | Azure OpenAI `gpt-5-mini`, version 2025-08-07, a GlobalStandard deployment | Low reasoning, at most 2,000 output tokens, prompt `answer.v5`. Upgraded only when the version retires |
 | Search rewrite | The same model | Minimal reasoning, prompt `rewrite.v2`: turns a specific question into the general one it's a case of |
 | Embeddings | Azure OpenAI `text-embedding-3-small`, in Australia East | 1,536 dimensions, for passages and questions |
 | Search | Azure AI Search, hybrid keyword and vector, Free tier | 12 passages per question, at most 4 from any one source |

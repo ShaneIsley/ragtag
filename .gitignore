@@ -16,6 +16,7 @@ __pycache__/
 *.tfstate.*
 *.tfvars
 tfplan
+tf.plan
 !*.tfvars.example
 .terraform.lock.hcl.bak
 .DS_Store

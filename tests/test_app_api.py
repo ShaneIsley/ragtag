@@ -87,7 +87,7 @@ def test_ask_returns_the_answer_with_its_sources(client: TestClient) -> None:
     assert len(body["retrieved"]) == 2
     # The panel names each passage the model was given.
     assert {"title", "section"} <= set(body["retrieved"][0])
-    assert body["prompt_version"] == "answer.v4"
+    assert body["prompt_version"] == "answer.v5"
 
 
 def test_ask_declines_off_topic_questions(client: TestClient) -> None:
