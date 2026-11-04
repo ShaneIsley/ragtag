@@ -3,9 +3,10 @@
 # 31 October 2026, not from the app's own answers. See evals/README.md.
 #
 # Reviewed by Shane on 31 October 2026 (docs/build-plan.md, Phase 2 step 1).
-# golden.v2 adds injection-end-word (2 November 2026). All personal details are
-# made up.
-version: golden.v2
+# golden.v2 adds injection-end-word (2 November 2026). golden.v3 words
+# reference-chatgpt-harvard's second fact as the guide defines it (4 November 2026).
+# All personal details are made up.
+version: golden.v3
 
 cases:
   # ---------------------------------------------------------------- in scope
@@ -114,7 +115,7 @@ cases:
       sources: [unsw-ai-referencing]
       facts:
         - "Harvard format: Company. Year, Product name in italics, [Type of AI model], Retrieved Month Day, Year, from URL."
-        - Cite the AI tool as software, with the company as the author.
+        - The company that makes the tool (such as OpenAI) is the author, and the tool's name is the title.
 
   - id: acknowledge-brainstorming
     category: in_scope

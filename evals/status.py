@@ -110,7 +110,8 @@ def releases(
 
     The version is the commit the app reports on /health. Whether the answer path changed
     comes from each version's fingerprint of the answer files (evals/records.py), against
-    the version before it.
+    the nearest older version that has one. A version without one skipped the gate, which
+    runs whenever the answer files change, so it changed none of them.
     """
     versions: dict[str, dict[str, list[Mapping[str, Any]]]] = {}
     for kind, runs in (("gate", gate), ("production", production)):
@@ -155,13 +156,10 @@ def releases(
             }
         )
     rows.sort(key=lambda row: row["moment"], reverse=True)
-    for newer, older in itertools.pairwise(rows):
-        both = newer["fingerprint"] and older["fingerprint"]
-        newer["answer_path_changed"] = (
-            newer["fingerprint"] != older["fingerprint"] if both else None
-        )
-    if rows:
-        rows[-1]["answer_path_changed"] = None
+    for i, row in enumerate(rows):
+        older = next((r["fingerprint"] for r in rows[i + 1 :] if r["fingerprint"]), None)
+        both = row["fingerprint"] and older
+        row["answer_path_changed"] = row["fingerprint"] != older if both else None
     for row in rows:
         del row["moment"], row["fingerprint"]
     return rows[:RELEASES_SHOWN]

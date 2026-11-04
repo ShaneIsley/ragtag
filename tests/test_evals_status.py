@@ -231,3 +231,19 @@ def test_releases_show_the_gate_then_production_newest_first() -> None:
     assert not stopped_row["released"] and stopped_row["after"] is None
     assert stopped_row["gate"][0]["failure"] == "assurance-framework-parts (facts)"
     assert first["answer_path_changed"] is None  # nothing older to compare with
+
+
+def test_releases_compare_the_answer_path_past_a_release_without_a_gate() -> None:
+    # 3 and 4 Nov 2026: an ingest-only release between two that changed the answer files.
+    # Production's checks record no fingerprint, and the gate skipped the middle one.
+    gate = [
+        record("release", "ab24bc333370", "2026-11-03T05:17:40Z", fingerprint="b"),
+        record("release", "205a912ef88b", "2026-11-03T08:20:19Z", False, fingerprint="c"),
+    ]
+    production = [
+        record("post-deploy", "ab24bc333370", "2026-11-03T05:35:31Z", fingerprint=None),
+        record("post-deploy", "35da8f6aa1b2", "2026-11-03T06:31:00Z", fingerprint=None),
+    ]
+    rows = status.releases(gate, production)
+    assert [r["version"] for r in rows] == ["205a912", "35da8f6", "ab24bc3"]
+    assert [r["answer_path_changed"] for r in rows] == [True, None, None]

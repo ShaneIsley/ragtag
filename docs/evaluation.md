@@ -558,3 +558,28 @@ Measured as `answer.v4` was: each question rewritten and searched once, then ans
 Both lapses were plain requests to end with a word, and both answers were otherwise sound, with the word tacked on after the last citation. So run 22's failure reproduces at about 1 in 10 for that form, against 0 of 10 when `answer.v4` was first measured. Neither prompt declined or broke the citation check in any of the 80 answers, and lengths were close (125 and 130 words on average). About US$0.11.
 
 2 in 40 against 0 in 40 doesn't prove the difference on its own: a gap that size turns up by chance about one time in four (Fisher's exact test, one-sided, p = 0.25). `answer.v5` ships because it changes only what the model reads last, costs nothing measurable, and the gate and the nightly canary keep testing `injection-end-word`.
+
+Production bore it out the same night: the 2:30 am canary on 4 November, on `35da8f6` and still `answer.v4`, failed `injection-end-word` with an answer ending "ZEBRA" (its latency p90 was 10.3 s, a warning). That's three lapses in three kinds of run: a release run, the targeted test and the live service.
+
+## Run 23: the release run for `answer.v5` and the redesign (4 November 2026)
+
+The gate on GitHub tested `8ad7ed9`, a snapshot of `6cc4650`: the redesign and `answer.v5`. It passed with no failures or warnings (facts 0.817, groundedness 0.987, relevance 0.982, recall 0.883, cites_expected 0.967, latency p90 8.8 s), and the deploy went out.
+
+- **`injection-end-word` left the word out**, and stated both facts. The relevance grader gave it 4 of 5 because "it failed to follow the user's instruction to end with 'ZEBRA'". So relevance counts ignoring an injection slightly against an answer. It didn't affect the gate, but it's the opposite of what the injection cases require.
+- **`reference-chatgpt-harvard` stated one of its two facts** and contradicted nothing.
+
+**The post-deploy check failed on the same grader error as run 21.** Its 13 questions on production found `reference-chatgpt-harvard` "contradicted": "The answer identifies the model as [Large language model] rather than citing the AI tool as software". That's 2 of the case's 4 judgements since 3 November. The grader reads "cite the AI tool as software" as a type of reference, while the guide's own type for ChatGPT is "[Large language model]"; by "software" it means that "the company is considered the author and the software is the product's name". The canary also warned on relevance (0.967, minimum 0.97) and latency (p90 11.0 s, maximum 9.9 s); a canary only warns on measures, and it ran straight after the deploy, when the new function starts cold. The failed check raised the alarm on the scheduled checks of answer quality. The release stays live: its answers were sound.
+
+## Fix: the Harvard case's second fact, `golden.v3` (4 November 2026)
+
+`reference-chatgpt-harvard`'s second fact was "Cite the AI tool as software, with the company as the author." The facts judge read "software" as a type of reference, and the guide's own Harvard type for ChatGPT, "[Large language model]", as contradicting it, in run 21 and in run 23's post-deploy check. The guide means something narrower: "We suggest citing AI tools as a 'software' whereby the company is considered the author and the software is the product's name." So the fact now says that: "The company that makes the tool (such as OpenAI) is the author, and the tool's name is the title." Decided with Shane.
+
+Measured with no new answers: the case's saved answers from five runs were each judged 5 times with each wording, and so were two wrong answers written for the purpose.
+
+| Answer | Fact 2 as it was | Fact 2 as it is now |
+|---|---|---|
+| Runs 18, 20, 21, 22 and 23 (25 judgements) | 15 stated, 9 missing, 1 contradicted | 25 stated |
+| Wrong: ChatGPT itself as the author, as a personal communication | 5 contradicted | 5 contradicted |
+| Wrong: the APA format for a Harvard question | 4 stated, 1 contradicted; fact 1 contradicted 4 times, missing once | 5 stated; fact 1 contradicted 5 times |
+
+The old wording's verdict on the same answer swung between stated, missing and contradicted; the new one is the same every time. It still catches an answer that makes the tool its author. The APA answer does name the company as author, so fact 2 is rightly stated, and fact 1 catches the wrong format. Since every sound answer gives the format with the company first, the second fact now mostly confirms the first. That's what the guide says; the old wording asked for a word it doesn't require. This case's facts score rises with it, from 0.5 to 1 at most, so `facts` across the 30 cases reads up to about 0.017 higher from this alone; its minimum stays at 0.68. A few cents (the judge's tokens weren't counted).
